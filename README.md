@@ -79,7 +79,7 @@ Erzeugen Sie ein Unterverzeichnis in homeassistant/custom_components
 3. Update-Intervall in Sekunden. Je kleiner der Werte umso öfters werden die Werte aktualisiert. 15 Sekunden sind standard. Weniger wie 5 Sekunden werden nicht empfohlen, weil dies die Integration und HA zu sehr stresst. Auch Ihr Netzwerk und der WR leiden unter zu häufigen Zugriffen.
 4. Nun können Sie Basis Werte für Port 1 (P1) und Port 2 eingeben. Sie haben hierfür zwei Eingabefelder. Wenn Sie die Werte leer lassen, wird die Integration versuchen, bereits früher eingegebene Werte zu finden und diese zu benutzen. Wenn Sie noch nie Werte eingegeben haben, wird der Basis Wert 0 für P1 und P2 angenommen. Diese Basiswerte werden zu den Total Energiewerten von P1 und P2 addiert. Der Wechselrichter hat intern keinen Gesamtspeicher für beide Porst sondern er hat nur getrennte Register für die jeweiligen Ports. Deshalb müssen Sie die Offsets auch getrennt eingeben. Wenn Sie das nicht interessiert, können Sie das Offset auch einfach auf P1 eingeben und P2 leer lassen. Die Summe wird dies nicht verändern. Zukünftige Overflows erhöhen intern automatisch die Basis. Nur wenn etwas furchtbar schief laufen sollte, können Sie den Konfig-Flow wieder aktivieren und die Werte ggf. korrigieren.
 
-Fertig! Viel Freude mit der verbesserten Integration.
+**Fertig! Viel Freude mit der verbesserten Integration.**
 
 [commits-shield]: https://img.shields.io/github/commit-activity/y/AndyNew2/hacs-APsystemsEZ1_local.svg?style=for-the-badge
 [commits]: https://github.com/AndyNew2/hacs-APsystemsEZ1_local/commits/master
