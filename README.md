@@ -32,7 +32,7 @@ Platform | Beschreibung
 
 1. Über die Zeit haben sich einige Problemchen mit der ursprünglichen Integration angesammelt, die wohl nur sehr stückweise angegangen werden.
 2. Die WLAN-API des EZ1-M Wechselrichters ist nicht immer sehr stabil. Oft werden Logs mit Fehlermeldungen überschüttet. Diese Integration minimiert die Log-Einträge
-3. Ein sehr ärgerlicher Überlauf in den Energiezählers für Port 1 und Port 2 (P1 und P2) sorgt für ein regelmäßiges Durcheinander im HA Energie-Dashboard. Diese Integration ermöglicht bei der Konfiguration eine Eingabe eines Energieoffsets für bisher stattgefundene Overruns. Wenn nichts eingegeben wird, wird kein Offset hinzugerechnet.
+3. Ein sehr ärgerlicher Überlauf in den Energiezählern für Port 1 und Port 2 (P1 und P2) sorgt für ein regelmäßiges Durcheinander im HA Energie-Dashboard. Diese Integration ermöglicht bei der Konfiguration eine Eingabe eines Energieoffsets für bisher stattgefundene Overruns. Wenn nichts eingegeben wird, wird kein Offset hinzugerechnet.
 4. Detektiert selbstständig weitere Overruns (passiert immer so um die 540kWh) und errechnet dann einen neuen Offset, der auch Persistent in HA gespeichert wird. Dieser Offset wird an die Seriennummer des Wechselrichters verbunden, so dass auch mehrere Wechelrichter unterstützt werden können.
 5. Auch nach einem Neustart bleibt der Offset erhalten und man hat keine Rücksprünge mehr und HA errechnet den tatsächlichen erzeugten Energiewert, obwohl der WR wieder bei 0 zum zählen beginnt.
 6. Microrückzähler anhand von Rundungsproblemen werden mit gespeicherten Werten korrigiert. Es gibt keine HA Warnungen mehr wegen Rücksprünge bei den Energiewerten.
