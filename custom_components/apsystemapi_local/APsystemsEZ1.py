@@ -54,7 +54,7 @@ class ReturnOutputData:
 
 IS_BATTERY_REGEX = re.compile("^.*_b$")
 
-MAX_RETRY_UNAVAILABLE = 4
+MAX_RETRY_UNAVAILABLE = 7
 
 class APsystemsEZ1M:
     """This class represents an EZ1 Microinverter and provides methods to interact with it
@@ -66,7 +66,7 @@ class APsystemsEZ1M:
     class _DebounceVal:
         old_state: float = 0.0
         base_state: float = 0.0
-        last_update: int = 0
+        last_update: int = -1
 
     def __init__(
         self,
@@ -94,9 +94,11 @@ class APsystemsEZ1M:
         self.enable_debounce = enable_debounce
         self._e1 = self._DebounceVal()
         self._e2 = self._DebounceVal()
-        self.saved_max_power: int = max_power
+        self.saved_max_power: int = -1
         self.currently_unavailable: int = 0
         # self.needs_rewrite_max_power: bool = False   currently not needed, we detect from behaviour, however this might change
+        self.currently_active: bool = False
+        # self._randomcounter=0  # for testing purposes, to simulate random failures and test retry mechanism, ignore in production code
 
     async def _request(self, endpoint: str, retry: int = 4) -> dict | None:
         """
@@ -109,34 +111,59 @@ class APsystemsEZ1M:
         :return: The JSON response from the microinverter as a dictionary.
         :raises: Prints an error message if the HTTP request fails for any reason.
         """
+        if self.currently_active:
+            _LOGGER.debug(f"Request to {endpoint} skipped because another request is currently active.")
+            raise InverterReturnedError("Double execution of EZ1 requests detected.")
+
         url = f"{self.base_url}/{endpoint}"
         if self.session is None:
             ses = ClientSession()
         else:
             ses = self.session
+
         try:
-            async with ses.get(url, timeout=self.timeout) as resp:
-                data = await resp.json()
-                _LOGGER.debug("%s: %s", endpoint, data)
+            self.currently_active = True
+            retryCounter: int = retry
+            while True:
+                try:
+                    async with ses.get(url, timeout=self.timeout) as resp:
+                        data = await resp.json()
+                        _LOGGER.debug("%s: %s", endpoint, data)
 
-                # Handle response
-                if resp.status != 200:
-                    raise HttpBadRequest(f"HTTP Error: {resp.status}")
-                if data["message"] == "SUCCESS":
-                    return data
-                if retry > 0:  # Re-run request when the inverter returned failed because of unknown reason
-                    _LOGGER.debug(f"The request to {endpoint} failed. Retrying (retry count: {retry})...")
-                    await asyncio.sleep(3)  # Add a short delay before retrying
-                    return await self._request(endpoint, retry=retry - 1)
-                self.currently_unavailable += 1
-                if self.currently_unavailable > MAX_RETRY_UNAVAILABLE:
-                    _LOGGER.debug(f"Multiple ({self.currently_unavailable} times) consecutive failures when requesting {endpoint}. Marking device as unavailable.")
-                    return InverterReturnedError(f"Request to {endpoint} failed after multiple retries.")
-                else:
-                    raise InverterReturnedError
+                        # # Simulate random failures for testing retry mechanism. --- IGNORE ---
+                        # self._randomcounter +=1
+                        # if self._randomcounter > 120:
+                        #    self._randomcounter = 0
+                        # if self._randomcounter % 9 < 4:
+                        #    raise InverterReturnedError("Simulated random failure for testing retry mechanism.")
+                        # if self._randomcounter > 85:
+                        #    raise InverterReturnedError("Simulated always failure for testing retry mechanism.")
+
+                        # Handle response
+                        if resp.status != 200:
+                            raise HttpBadRequest(f"HTTP Error: {resp.status}")
+                        if data["message"] == "SUCCESS":
+                            if self.currently_unavailable <= MAX_RETRY_UNAVAILABLE:
+                                self.currently_unavailable = 0  # reset unavailable counter on success, however we do not want to reset it when we are already in unavailable state, we leave it to max value, so we can detect the next available state and react on it.
+                            return data
+                        else:
+                            raise InverterReturnedError(f"Request to {endpoint} failed with message: {data['message']}")
+                except:
+                    retryCounter -= 1
+                    if retryCounter <= 0:
+                        raise
+                    self.currently_unavailable += 1
+                    if self.currently_unavailable > MAX_RETRY_UNAVAILABLE:
+                        _LOGGER.debug(f"Multiple ({self.currently_unavailable} times) consecutive failures when requesting {endpoint}. Marking device as unavailable.")
+                        raise InverterReturnedError(f"Request to {endpoint} failed after multiple retries.")
+                    # Re-run request when the inverter returned failed because of unknown reason
+                    _LOGGER.debug(f"The request to {endpoint} failed. Retrying (retry count: {retryCounter})...")
+
+                await asyncio.sleep(1)  # Add a short delay before retrying
+
         finally:
+            self.currently_active = False
             # Close if session created on per-execution base
-
             if self.session is None:
                 await ses.close()
 
@@ -150,11 +177,13 @@ class APsystemsEZ1M:
             state.base_state = state.base_state + state.old_state
 
         state.old_state = new_state
+        if state.last_update == -1:
+            state.last_update = dt_util.now().day  # initialize with current day, so we do not get a reset on the first run.
 
         # reset basis each day
         if state.last_update != dt_util.now().day:
             state.last_update = dt_util.now().day
-            state.base_state = 0.0
+            state.base_state = -state.old_state  # we need to substract startvalue of daystart to start with a 0 at 00:00
 
         if isinstance(new_state, float):
             return new_state + state.base_state
@@ -320,19 +349,22 @@ class APsystemsEZ1M:
             return None
 
         new_max_power = int(response["data"]["maxPower"])
-        if self.currently_unavailable > MAX_RETRY_UNAVAILABLE:
+        if (self.currently_unavailable > MAX_RETRY_UNAVAILABLE) and (self.saved_max_power >= 30):
             # so this is the first successful call, after an unavailable period.
             # newer firmware version > 1.10.x do not store anymore the max_power, therefore we need to tell the max_power now
-            self.currently_unavailable = 0
             if ((new_max_power == 800) and (self.saved_max_power != new_max_power)) or (new_max_power == 0):
                 try:
                     await asyncio.sleep(7)  # Add a short delay before next command
                     new_max_power = self.saved_max_power
                     await self.set_max_power(self.saved_max_power)
-                except Exception:
+                except:
                     i = 0 # ignore all further errors here, ..
 
-        if new_max_power>=30: self.saved_max_power = new_max_power # lower values are not accepted, so this is the new firmware reporting this in off state
+        self.currently_unavailable = 0  # we got a value, therefore reset unavailable counter.
+
+        if (new_max_power>=30) and (self.saved_max_power<30):
+            # we just change stored value if current saved values is unvalid. This prevents destroying the saved value with sporadic successful reads.
+            self.saved_max_power = new_max_power # lower values are not accepted, so this is the new firmware reporting in off state
         return new_max_power
 
     async def set_max_power(self, power_limit: int) -> int | None:
@@ -414,7 +446,7 @@ class APsystemsEZ1M:
             try:
                await asyncio.sleep(7)  # Add a short delay before next command
                # newer firmware version > 1.10.x resets max power to 800W when switching on, therefore we reset the old max_power value.
-               if self.saved_max_power != 800:
+               if (self.saved_max_power<800) and (self.saved_max_power>=30):  # we do not need to write 800 (is default anyway), therefore <800 and not <=800.
                    await self.set_max_power(self.saved_max_power)
             except:
                status_value = "0"  # ignore all errors here, as the max power value is already validated when set and we don't want to raise an error when trying to set it again on power on
