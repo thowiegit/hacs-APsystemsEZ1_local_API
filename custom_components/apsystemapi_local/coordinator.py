@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import time
+import asyncio
 from dataclasses import dataclass
 from datetime import timedelta
 
@@ -14,12 +14,14 @@ from .APsystemsEZ1 import (
 )
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import _LOGGER, HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN, LOGGER, BASE_PRODUCED_P1, BASE_PRODUCED_P2
 
+import logging
+_LOGGER = logging.getLogger(__name__)
 
 @dataclass
 class ApSystemsSensorData:
@@ -73,21 +75,50 @@ class ApSystemsDataCoordinator(DataUpdateCoordinator[ApSystemsSensorData]):
         self.retrycounter: int = 0
         self._store = _store
         self.updateCounter: int = 0
-        self.old_output_data = None
-        self.old_alarm_info = None
+        self.old_output_data = ReturnOutputData(
+            p1=0,
+            e1=10,
+            te1=20,
+            p2=0,
+            e2=11,
+            te2=22
+        )
+        self.old_alarm_info = ReturnAlarmInfo(
+                offgrid=False,
+                shortcircuit_1=False,
+                shortcircuit_2=False,
+                operating=True
+        )
+        self.currently_running: bool = False
 
     async def _async_setup(self) -> None:
-        try:
-            device_info = await self.api.get_device_info()
-        except (ConnectionError, TimeoutError):
-            raise UpdateFailed from None
+        retry: int = 5
+        while retry > 0:
+            try:
+                device_info = await self.api.get_device_info()
+                retry = 0  # reset retry counter on success
+
+            except:
+                if retry <= 0:
+                    raise UpdateFailed from None
+                await asyncio.sleep(2)  # Add a short delay before retrying
+
         self.api.max_power = device_info.maxPower
         self.api.min_power = device_info.minPower
         self.device_version = device_info.devVer
         self.battery_system = device_info.isBatterySystem
 
     async def _async_update_data(self) -> ApSystemsSensorData:
+        # _LOGGER.info("Starting data update...")
+        if self.currently_running:
+            _LOGGER.debug("Update already running, skipping outvalues and alarm info, using old data...")
+            return ApSystemsSensorData(output_data=self.old_output_data, alarm_info=self.old_alarm_info)
         try:
+            self.currently_running = True
+            if (self.retrycounter>7) and ((self.retrycounter % 5) != 0):
+                # After 7 unavailable cycles, reduce update rate, since micro inverter is very likely off and cannot response anyhow.
+                self.retrycounter += 1
+                return ApSystemsSensorData(output_data=self.old_output_data, alarm_info=self.old_alarm_info)
             output_data = await self.api.get_output_data()
             self.updateCounter += 1
             resetDetected:bool = False
@@ -121,7 +152,7 @@ class ApSystemsDataCoordinator(DataUpdateCoordinator[ApSystemsSensorData]):
             output_data.te2 += self.base_produced_p2
             self.old_output_data = output_data
 
-            if (self.updateCounter % 5 == 0) or (self.old_alarm_info is None):
+            if (self.updateCounter % 5 == 0):
                 alarm_info = await self.api.get_alarm_info()
                 self.old_alarm_info = alarm_info
             else:
@@ -131,17 +162,22 @@ class ApSystemsDataCoordinator(DataUpdateCoordinator[ApSystemsSensorData]):
             self.retrycounter += 1
             if (self.retrycounter > 7):
                 # After 7 unavailable cycles, micro inverter is off, prevent further logs, they are useless
-                if self.old_output_data is not None:
-                    self.old_output_data.p1 = 0
-                    self.old_output_data.p2 = 0
+                self.old_output_data.p1 = 0
+                self.old_output_data.p2 = 0
+                _LOGGER.debug("Inverter returned an error, returning modified old data... (retrycounter: %d)", self.retrycounter)
                 return ApSystemsSensorData(output_data=self.old_output_data, alarm_info=self.old_alarm_info)
             elif (self.retrycounter > 5):
+                _LOGGER.info("Inverter returned an error, raising exception... (retrycounter: %d)", self.retrycounter)
                 raise UpdateFailed(
                     translation_domain=DOMAIN, translation_key="inverter_error"
                 ) from None
             else:
                 # Otherwise we return old data
+                _LOGGER.debug("Inverter returned an error, returning old data... (retrycounter: %d)", self.retrycounter)
                 return ApSystemsSensorData(output_data=self.old_output_data, alarm_info=self.old_alarm_info)
+        finally:
+            self.currently_running = False
 
         self.retrycounter = 0
+        # _LOGGER.info("  .. Ending data update")
         return ApSystemsSensorData(output_data=output_data, alarm_info=alarm_info)
