@@ -50,7 +50,8 @@ Platform | Beschreibung
 1. Installieren Sie HACS [HACS](https://hacs.xyz/) und führen Sie das zugehörige Setup aus.
 2. Gehen Sie in HACS und selektieren "Integrations".
 3. Fügen Sie `AndyNew2/hacs-APsystemsEZ1_local` ein, mit der Kathegorie "Integration" als ein [Benutzer Repository](https://hacs.xyz/docs/faq/custom_repositories/). Oder einfacher, benutzen Sie einfach den Link nach "Installation mit HACS Repository (Empfohlen)".
-4. Wählen Sie "APsystems Local API" von der Liste und klicken auf "Download". Oder benutzen Sie den Link unten einfach ;-)
+Falls möglich gleich den "Download" Button nutzen und die aktuelle Version der Integration herunterladen, sonst verschwindet das neue Repository gleich wieder.
+4. Wählen Sie "APsystems Local API" von der Liste oder beim Dialog oben klicken auf "Download".
 5. Anschließend müssen Sie Home Assistant neu starten, damit die Integration verfügbar wird.
 
 ### Installation der Integration APsystems Local API
@@ -62,7 +63,7 @@ Sie müssen jedoch wie oben beschrieben Home Assistant einmal neu starten.
 
 Nun können wir unseren Wechselrichter hinzufügen mit dem Konfigurations-Dialog:
 
-1. In der HA GUI gehen Sie zu "Einstellungen" -> "Geräte & Dienste". Unten rechts klicken Sie auf "Integration hinzufügen". Dann suchen Sie nach APsystems Local API (nicht die APSystems nehmen). Oder benutzen Sie einfach den Link oben.
+1. In der HA GUI gehen Sie zu "Einstellungen" -> "Geräte & Dienste". Unten rechts klicken Sie auf "Integration hinzufügen". Dann suchen Sie nach "APsystems Local API" (nicht die APSystems nehmen). Oder benutzen Sie einfach den Link oben.
 2. Gehen Sie durch den Konfig-Dialog, anschließend ist Ihr Wechselrichter in Home Assistant eingerichtet.
 
 ### Manual Installation
