@@ -45,7 +45,7 @@ Platform | Beschreibung
 
 ### Installation mit HACS Repository (Empfohlen)
 
-[![Öffnen Sie Ihr Home Assistant und gehen Sie in das Repository im Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=AndyNew2&repository=hacs-APsystemEZ1_local&category=integration)
+[![Öffnen Sie Ihr Home Assistant und gehen Sie in das Repository im Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=AndyNew2&repository=hacs-APsystemsEZ1_local&category=integration)
 
 1. Installieren Sie HACS [HACS](https://hacs.xyz/) und führen Sie das zugehörige Setup aus.
 2. Gehen Sie in HACS und selektieren "Integrations".
@@ -68,7 +68,7 @@ Nun können wir unseren Wechselrichter hinzufügen mit dem Konfigurations-Dialog
 ### Manual Installation
 
 Erzeugen Sie ein Unterverzeichnis in homeassistant/custom_components
-1. Ein Unterverzeichnis mit dem Namen "apsystemapi_local"
+1. Ein Unterverzeichnis mit dem Namen "apsystemsapi_local"
 2. Kopieren Sie alle Files hier in dieses Verzeichnis auch mit dem Unterverzeichnis translations.
 3. Neustart von Home Assistant
 4. In den Geräten, suchen Sie nun "APsystems Local API". Konfiguration nach dem Konfig-Dialog, wie unten beschrieben.
