@@ -128,7 +128,7 @@ class APsystemsEZ1M:
                 try:
                     async with ses.get(url, timeout=self.timeout) as resp:
                         data = await resp.json()
-                        _LOGGER.debug("%s: %s", endpoint, data)
+                        # _LOGGER.debug("%s: %s", endpoint, data)
 
                         # # Simulate random failures for testing retry mechanism. --- IGNORE ---
                         # self._randomcounter +=1
@@ -354,11 +354,11 @@ class APsystemsEZ1M:
             # newer firmware version > 1.10.x do not store anymore the max_power, therefore we need to tell the max_power now
             if ((new_max_power == 800) and (self.saved_max_power != new_max_power)) or (new_max_power == 0):
                 try:
-                    await asyncio.sleep(7)  # Add a short delay before next command
+                    await asyncio.sleep(3)  # Add a short delay before next command
                     new_max_power = self.saved_max_power
                     await self.set_max_power(self.saved_max_power)
                 except:
-                    i = 0 # ignore all further errors here, ..
+                    pass # ignore all further errors here, ..
 
         self.currently_unavailable = 0  # we got a value, therefore reset unavailable counter.
 
@@ -449,6 +449,6 @@ class APsystemsEZ1M:
                if (self.saved_max_power<800) and (self.saved_max_power>=30):  # we do not need to write 800 (is default anyway), therefore <800 and not <=800.
                    await self.set_max_power(self.saved_max_power)
             except:
-               status_value = "0"  # ignore all errors here, as the max power value is already validated when set and we don't want to raise an error when trying to set it again on power on
+               pass  # ignore all errors here, as the max power value is already validated when set and we don't want to raise an error when trying to set it again on power on
 
         return not bool(int(request["data"]["status"])) if request else None
