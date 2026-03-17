@@ -10,6 +10,7 @@ from homeassistant.const import UnitOfPower
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import DiscoveryInfoType
+from homeassistant.util import timedelta
 
 from .coordinator import ApSystemsConfigEntry, ApSystemsData
 from .entity import ApSystemsEntity
@@ -45,6 +46,8 @@ class ApSystemsMaxOutputNumber(ApSystemsEntity, NumberEntity):
         super().__init__(data)
         self._api = data.coordinator.api
         self._coordinator = data.coordinator
+        # there is no own coordinator for numbers and switch, therefore they run with default from HA = 30 seconds. Nothing to control here.
+        # This is good enough for these two values, therefore no further effort to this ...
         self._attr_unique_id = f"{data.device_id}_output_limit"
         self._attr_native_max_value = data.coordinator.api.max_power
         self._attr_native_min_value = data.coordinator.api.min_power
@@ -52,11 +55,12 @@ class ApSystemsMaxOutputNumber(ApSystemsEntity, NumberEntity):
     async def async_update(self) -> None:
         """Set the state with the value fetched from the inverter."""
 
+        _LOGGER.debug("Updating max output number...")
         counter: int = 0
         while self._coordinator.currently_running:
-            await asyncio.sleep(2)  # Locking for poor people, but better than nothing...
+            await asyncio.sleep(0.8)  # Locking for poor people, but better than nothing...
             counter += 1  # usually we could stop updating, however maxout is rearly updated, therefore give it a little retry ..
-            if counter > 3:  # After 8 seconds of waiting, give up
+            if counter > 4:  # After 3.2 seconds of waiting, give up
                 _LOGGER.debug("Update already running, skipping max_power...")
                 return # Skip update if coordinator is currently running an update
 
