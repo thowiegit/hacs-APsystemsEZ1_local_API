@@ -40,7 +40,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ApSystemsConfigEntry) ->
     api = APsystemsEZ1M(
         ip_address=entry.data[CONF_IP_ADDRESS],
         port=entry.data.get(CONF_PORT, DEFAULT_PORT),
-        timeout=7,
+        timeout=4,
         enable_debounce=True,
     )
 
