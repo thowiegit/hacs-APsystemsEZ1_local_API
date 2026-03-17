@@ -45,11 +45,12 @@ class ApSystemsInverterSwitch(ApSystemsEntity, SwitchEntity):
 
     async def async_update(self) -> None:
         """Update switch status and availability."""
+        _LOGGER.debug("Updating inverter switch...")
         counter: int = 0
         while self._coordinator.currently_running:
-            await asyncio.sleep(2)  # Locking for poor people, but better than nothing...
+            await asyncio.sleep(0.9)  # Locking for poor people, but better than nothing...
             counter += 1  # usually we could stop updating, however switch status is rearly updated, therefore give it a little retry ..
-            if counter > 3:  # After 8 seconds of waiting, give up
+            if counter > 4:  # After 3.6 seconds of waiting, give up
                 _LOGGER.debug("Update already running, skipping switch...")
                 return # Skip update if coordinator is currently running an update
 
