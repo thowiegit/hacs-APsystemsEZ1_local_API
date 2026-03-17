@@ -64,7 +64,7 @@ class APsystemsEZ1M:
 
     @dataclass
     class _DebounceVal:
-        old_state: float = 0.0
+        old_state: float = -1.0
         base_state: float = 0.0
         last_update: int = -1
 
@@ -72,7 +72,7 @@ class APsystemsEZ1M:
         self,
         ip_address: str,
         port: int = 8050,
-        timeout: int = 5,
+        timeout: int = 4,
         max_power: int = 800,
         min_power: int = 30,
         session: ClientSession | None = None,
@@ -112,7 +112,7 @@ class APsystemsEZ1M:
         :raises: Prints an error message if the HTTP request fails for any reason.
         """
         if self.currently_active:
-            _LOGGER.debug(f"Request to {endpoint} skipped because another request is currently active.")
+            _LOGGER.info(f"Request to {endpoint} skipped because another request is currently active.")
             raise InverterReturnedError("Double execution of EZ1 requests detected.")
 
         url = f"{self.base_url}/{endpoint}"
@@ -171,21 +171,23 @@ class APsystemsEZ1M:
         """Recover total value in case state is reset during a day."""
         if (
             isinstance(state.old_state, float)
+            and (state.old_state >= 0.0)
             and isinstance(new_state, float)
             and state.old_state > new_state
         ):
             state.base_state = state.base_state + state.old_state
 
-        state.old_state = new_state
-        if state.last_update == -1:
+        if (state.last_update == -1) and isinstance(new_state, float):
             state.last_update = dt_util.now().day  # initialize with current day, so we do not get a reset on the first run.
 
         # reset basis each day
-        if state.last_update != dt_util.now().day:
+        if (state.last_update != dt_util.now().day) and isinstance(new_state, float) and isinstance(state.old_state, float) and (state.old_state >= 0.0):
             state.last_update = dt_util.now().day
             state.base_state = -state.old_state  # we need to substract startvalue of daystart to start with a 0 at 00:00
 
-        if isinstance(new_state, float):
+        state.old_state = new_state
+
+        if isinstance(new_state, float) and isinstance(state.base_state, float):
             return new_state + state.base_state
 
         return new_state
