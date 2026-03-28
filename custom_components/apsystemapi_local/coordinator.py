@@ -20,6 +20,7 @@ from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN, LOGGER, BASE_PRODUCED_P1, BASE_PRODUCED_P2
 
+
 import logging
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,9 +36,89 @@ class ApSystemsData:
     """Store runtime data."""
     coordinator: ApSystemsDataCoordinator
     device_id: str
-
+    slow_coordinator: APSystemsSlowUpdateCoordinator
 
 type ApSystemsConfigEntry = ConfigEntry[ApSystemsData]
+
+
+from .number import ApSystemsMaxOutputNumber
+from .switch import ApSystemsInverterSwitch
+
+class APSystemsSlowUpdateCoordinator(DataUpdateCoordinator):
+    """My custom coordinator."""
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        config_entry,
+        update_interval: int,
+        coordinator: ApSystemsDataCoordinator
+    ) -> None:
+        """Initialize my coordinator."""
+        super().__init__(
+            hass,
+            LOGGER,
+            # Name of the data. For logging purposes.
+            name="APSystemsSlowData",
+            config_entry=config_entry,
+            update_interval=timedelta(seconds=update_interval),
+            always_update=True,
+        )
+        self._coordinator = coordinator
+        self._maxOutputNumber = None
+        self._powerSwitch = None
+        self._toggleCounter: int = 0
+        _LOGGER.debug("APSystemsSlowCoordinator: Created...")
+
+    def setMaxOutPutEntity(self, maxOutPut: ApSystemsMaxOutputNumber):
+        """Defines max output entity."""
+        self._maxOutputNumber = maxOutPut
+
+    def setPowerSwitchEntity(self, powerSwitch: ApSystemsInverterSwitch):
+        """Defines power switch entity."""
+        self._powerSwitch = powerSwitch
+
+    async def _async_setup(self):
+        """Handle initial setup tasks."""
+        _LOGGER.debug("APSystemsSlowCoordinator: _async_setup...")
+        pass
+
+    async def _async_update_data(self) -> None:
+        """Fetch data from API endpoint.
+
+        This is the place to pre-process the data to lookup tables
+        so entities can quickly look up their data.
+        """
+        _LOGGER.debug("APSystemsSlowCoordinator: Updating ...")
+
+        if self._maxOutputNumber is None:
+            _LOGGER.warning("APSystemsSlowCoordinator: No max output entity!")
+            return
+        if self._powerSwitch is None:
+            _LOGGER.warning("APSystemsSlowCoordinator: No power switch entity!")
+            return
+
+        counter: int = 0
+        while self._coordinator.currently_running:
+            await asyncio.sleep(0.7)  # Locking for poor people, but better than nothing...
+            counter += 1  # usually we could stop updating, however maxout is rearly updated, therefore give it a little retry ..
+            if counter > 4:  # After 2.8 seconds of waiting, give up
+                _LOGGER.debug("Update already running, skipping slow data...")
+                return # Skip update if coordinator is currently running an update
+
+        try:
+            self._coordinator.currently_running = True  # Set coordinator to running state to prevent concurrent updates
+
+            if (self._toggleCounter%2==1):
+                await self._maxOutputNumber.async_update()  # Update the max output number as part of the coordinator's update cycle
+            else:
+                await self._powerSwitch.async_update()
+
+            self._toggleCounter+=1
+        except:
+            _LOGGER.debug("Exception while update slow data. Retry next cycle...")
+        finally:
+            self._coordinator.currently_running = False  # Reset running state on error
 
 
 class ApSystemsDataCoordinator(DataUpdateCoordinator[ApSystemsSensorData]):
