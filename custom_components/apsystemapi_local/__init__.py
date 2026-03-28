@@ -11,7 +11,7 @@ from homeassistant.core import _LOGGER, HomeAssistant
 from homeassistant.helpers.storage import Store
 
 from .const import DEFAULT_PORT, DOMAIN, UPDATE_INTERVAL, BASE_PRODUCED_P1, BASE_PRODUCED_P2, LOGGER
-from .coordinator import ApSystemsConfigEntry, ApSystemsData, ApSystemsDataCoordinator
+from .coordinator import ApSystemsConfigEntry, ApSystemsData, ApSystemsDataCoordinator, APSystemsSlowUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -65,11 +65,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ApSystemsConfigEntry) ->
 
     coordinator = ApSystemsDataCoordinator(hass, entry, api, interval=entry.data.get(UPDATE_INTERVAL, 15),
                         base_produced_p1=bp_p1, base_produced_p2=bp_p2, _store=_store)
-
     await coordinator.async_config_entry_first_refresh()
 
+    # Not defining an own coordinator seems to make HA GUI very unresponsive, since we need to do a lot of retries and waits, therefore we added our own coordinator
+    # even for the slow updates.
+    slowcoord = APSystemsSlowUpdateCoordinator(hass, entry, 24, coordinator)
     entry.runtime_data = ApSystemsData(
-        coordinator=coordinator, device_id=entry.unique_id
+        coordinator=coordinator, device_id=entry.unique_id,
+        slow_coordinator=slowcoord
     )
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
