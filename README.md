@@ -89,3 +89,4 @@ Erzeugen Sie ein Unterverzeichnis in homeassistant/custom_components
 [license-shield]: https://img.shields.io/github/license/thowiegit/hacs-APsystemsEZ1_local_API_API.svg?style=for-the-badge
 [releases-shield]: https://img.shields.io/github/release/thowiegit/hacs-APsystemsEZ1_local_API_API.svg?style=for-the-badge
 [releases]: https://github.com/thowiegit/hacs-APsystemsEZ1_local_API_API/releases
+[![Upstream Release](https://img.shields.io/github/v/release/AndyNew2/hacs-APsystemsEZ1_local?label=upstream%20version)](https://github.com/AndyNew2/hacs-APsystemsEZ1_local)
