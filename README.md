@@ -8,7 +8,8 @@ Keywords: Home Assistant HA - APsystem EZ1 EZ1-M - Microinverter - Microwechselr
 
 # APsystems EZ1 local API Integration
 
-[![GitHub Release][releases-shield]][releases]
+[![GitHub Release][releases-shield]
+[![Upstream Release][upstream-shield]][upstream-repo]][releases]
 [![GitHub Activity][commits-shield]][commits]
 [![License][license-shield]](LICENSE)
 
@@ -89,4 +90,5 @@ Erzeugen Sie ein Unterverzeichnis in homeassistant/custom_components
 [license-shield]: https://img.shields.io/github/license/thowiegit/hacs-APsystemsEZ1_local_API_API.svg?style=for-the-badge
 [releases-shield]: https://img.shields.io/github/release/thowiegit/hacs-APsystemsEZ1_local_API_API.svg?style=for-the-badge
 [releases]: https://github.com/thowiegit/hacs-APsystemsEZ1_local_API_API/releases
-[![Upstream Release](https://img.shields.io/github/v/release/AndyNew2/hacs-APsystemsEZ1_local?label=upstream%20version)](https://github.com/AndyNew2/hacs-APsystemsEZ1_local)
+[upstream-shield]: https://img.shields.io/github/v/release/AndyNew2/hacs-APsystemsEZ1_local?label=upstream%20version&style=for-the-badge
+[upstream-repo]: https://github.com/AndyNew2/hacs-APsystemsEZ1_local

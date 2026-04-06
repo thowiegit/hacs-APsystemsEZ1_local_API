@@ -62,9 +62,16 @@ jobs:
           find . -type f \( -name "README.md" \) -print0 | xargs -0 sed -i 's/AndyNew2\/hacs-APsystemsEZ1_local/thowiegit\/hacs-APsystemsEZ1_local_API/g'
 
           # 12. Upstream-Badge wieder einfügen (falls durch Merge gelöscht)
-          # Wir prüfen, ob das Badge schon da ist, wenn nicht: nach der ersten Zeile einfügen
-          if ! grep -q "AndyNew2/hacs-APsystemsEZ1_local?label=upstream" README.md; then
-            echo "[![Upstream Release](https://img.shields.io/github/v/release/AndyNew2/hacs-APsystemsEZ1_local?label=upstream%20version)](https://github.com/AndyNew2/hacs-APsystemsEZ1_local)" >> README.md
+          # Wir prüfen, ob das Badge schon da ist, wenn nicht: wieder einfügen
+          if ! grep -q "\[upstream-shield\]" README.md; then
+
+            # Füge den Platzhalter oben ein:
+            # Suche nach der Zeile mit [releases-shield] und füge die Upstream-Zeile DARUNTER ein
+            sed -i '0,/\[releases-shield\]/ s/\[releases-shield\]/&\n[![Upstream Release][upstream-shield]][upstream-repo]/' README.md
+
+            # Füge die URL-Definitionen ganz am Ende der Datei an
+            echo "[upstream-shield]: https://img.shields.io/github/v/release/AndyNew2/hacs-APsystemsEZ1_local?label=upstream%20version&style=for-the-badge" >> README.md
+            echo "[upstream-repo]: https://github.com/AndyNew2/hacs-APsystemsEZ1_local" >> README.md
           fi
 
       - name: Commit and Push
