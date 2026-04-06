@@ -2,8 +2,8 @@ name: Sync and Patch Upstream
 
 on:
   schedule:
-    - cron: '0 0 * * *' # Läuft täglich um Mitternacht
-  workflow_dispatch:   # Ermöglicht manuelles Auslösen über den "Actions" Tab
+    - cron: '0 0 * * *'
+  workflow_dispatch:
 
 jobs:
   sync_and_patch:
@@ -27,49 +27,39 @@ jobs:
 
       - name: Merge Upstream Changes
         run: |
-          # Merget Änderungen vom Original, bevorzugt bei Konflikten deren Stand (wird danach gepatcht)
           git merge upstream/main --allow-unrelated-histories -X theirs --no-commit || true
 
       - name: Apply Custom Patches
         run: |
-          # 1. & 2. Verzeichnis umbenennen
+          # --- 1. CODE & STRUKTUR (manifest.json etc.) ---
           if [ -d "custom_components/apsystemsapi_local" ]; then
             mv custom_components/apsystemsapi_local custom_components/apsystems
           fi
 
-          # 3. Domain-Strings in Code und Konfiguration ersetzen
-          find . -type f \( -name "*.py" -o -name "*.json" -o -name "*.yaml" \) -print0 | xargs -0 sed -i 's/apsystemsapi_local/apsystems/g'
+          # Patch manifest.json nur, wenn thowiegit noch nicht drin steht
+          if ! grep -q "@thowiegit" custom_components/apsystems/manifest.json; then
+            sed -i 's/apsystemsapi_local/apsystems/g' custom_components/apsystems/manifest.json
+            sed -i 's/"name": "APsystems Local API"/"name": "APsystems"/g' custom_components/apsystems/manifest.json
+            sed -i 's/"@AndyNew2", "@mawoka-myblock", "@SonnenladenGmbH"/"@thowiegit", "@AndyNew2", "@mawoka-myblock", "@SonnenladenGmbH"/g' custom_components/apsystems/manifest.json
+          fi
 
-          # 4. Anzeigenamen in manifest.json anpassen
-          find . -type f \( -name "manifest.json" \) -print0 | xargs -0 sed -i 's/APsystems Local API/APsystems/g'
-
-          # 5. Dich als Code-Owner hinzufügen
-          find . -type f \( -name "manifest.json" \) -print0 | xargs -0 sed -i 's/"@AndyNew2", "@mawoka-myblock", "@SonnenladenGmbH"/"@thowiegit", "@AndyNew2", "@mawoka-myblock", "@SonnenladenGmbH"/g'
-
-          # 7. README Link/Titel anpassen
-          find . -type f \( -name "README.md" \) -print0 | xargs -0 sed -i 's/hacs-APsystemsEZ1_local/hacs-APsystemsEZ1_local_API/g'
-
-          # 8. Beschreibung in README präzisieren
-          find . -type f \( -name "README.md" \) -print0 | xargs -0 sed -i 's/Modification of popular EZ1 Microinverter to fix/Modification of popular EZ1 Microinverter Integration to fix/'
-
-          # 9. Titel in README ergänzen
-          find . -type f \( -name "README.md" \) -print0 | xargs -0 sed -i 's/APsystems EZ1 local Integration/APsystems EZ1 local API Integration/'
-
-          # 10. Letzte Reste von apsystemsapi_local in README ersetzen
-          find . -type f \( -name "README.md" \) -print0 | xargs -0 sed -i 's/apsystemsapi_local/apsystems/g'
-
-          # 11. Badge-URLs auf dein Repo umbiegen (Shields.io etc.)
-          find . -type f \( -name "README.md" \) -print0 | xargs -0 sed -i 's/AndyNew2\/hacs-APsystemsEZ1_local/thowiegit\/hacs-APsystemsEZ1_local_API/g'
-
-          # 12. Upstream-Badge wieder einfügen (falls durch Merge gelöscht)
-          # Wir prüfen, ob das Badge schon da ist, wenn nicht: wieder einfügen
-          if ! grep -q "\[upstream-shield\]" README.md; then
-
-            # Füge den Platzhalter oben ein:
-            # Füge den Platzhalter NACH der ersten kompletten Link-Referenz von [releases] ein
+          # --- 2. README.md SCHUTZ-LOGIK ---
+          # Wenn das Upstream-Badge existiert, wurde die Datei bereits erfolgreich gepatcht.
+          # In diesem Fall überspringen wir alle Änderungen an der README.md komplett.
+          if grep -q "\[upstream-shield\]" README.md; then
+            echo "README.md bereits gepatcht (Upstream-Badge gefunden). Überspringe README-Patches."
+          else
+            echo "README.md wird gepatcht..."
+            
+            # Alle Ersetzungen in einem Rutsch
+            sed -i 's/apsystemsapi_local/apsystems/g' README.md
+            sed -i 's/AndyNew2\/hacs-APsystemsEZ1_local/thowiegit\/hacs-APsystemsEZ1_local_API/g' README.md
+            sed -i 's/APsystems EZ1 local Integration/APsystems EZ1 local API Integration/g' README.md
+            sed -i 's/popular EZ1 Microinverter to fix/popular EZ1 Microinverter Integration to fix/g' README.md
+            
+            # Upstream-Badge am Ende einfügen (Platzhalter + Referenzen)
             sed -i '0,/\]\[releases\]/ s/\]\[releases\]/&\n[![Upstream Release][upstream-shield]][upstream-repo]/' README.md
-
-            # Füge die URL-Definitionen ganz am Ende der Datei an
+            echo "" >> README.md
             echo "[upstream-shield]: https://img.shields.io/github/v/release/AndyNew2/hacs-APsystemsEZ1_local?label=upstream%20version&style=for-the-badge" >> README.md
             echo "[upstream-repo]: https://github.com/AndyNew2/hacs-APsystemsEZ1_local" >> README.md
           fi
@@ -77,10 +67,10 @@ jobs:
       - name: Commit and Push
         run: |
           git add .
-          # Nur committen, wenn es tatsächlich Änderungen gab
           if ! git diff-index --quiet HEAD; then
-            git commit -m "Auto-Patch: Sync with upstream and apply custom structure for @thowiegit"
+            git commit -m "Auto-Patch: Guarded sync (README protection active)"
             git push origin main
           else
             echo "No changes to commit"
           fi
+
