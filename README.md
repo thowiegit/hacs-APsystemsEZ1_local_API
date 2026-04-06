@@ -83,12 +83,12 @@ Erzeugen Sie ein Unterverzeichnis in homeassistant/custom_components
 
 **Fertig! Viel Freude mit der verbesserten Integration.**
 
-[commits-shield]: https://img.shields.io/github/commit-activity/y/thowiegit/hacs-APsystemsEZ1_local_API_API.svg?style=for-the-badge
-[commits]: https://github.com/thowiegit/hacs-APsystemsEZ1_local_API_API/commits/master
+[commits-shield]: https://img.shields.io/github/commit-activity/y/thowiegit/hacs-APsystemsEZ1_local_API.svg?style=for-the-badge
+[commits]: https://github.com/thowiegit/hacs-APsystemsEZ1_local_API/commits/master
 [hacs]: https://github.com/hacs/integration
 [hacsbadge]: https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge
-[license-shield]: https://img.shields.io/github/license/thowiegit/hacs-APsystemsEZ1_local_API_API.svg?style=for-the-badge
-[releases-shield]: https://img.shields.io/github/release/thowiegit/hacs-APsystemsEZ1_local_API_API.svg?style=for-the-badge
-[releases]: https://github.com/thowiegit/hacs-APsystemsEZ1_local_API_API/releases
+[license-shield]: https://img.shields.io/github/license/thowiegit/hacs-APsystemsEZ1_local_API.svg?style=for-the-badge
+[releases-shield]: https://img.shields.io/github/release/thowiegit/hacs-APsystemsEZ1_local_API.svg?style=for-the-badge
+[releases]: https://github.com/thowiegit/hacs-APsystemsEZ1_local_API/releases
 [upstream-shield]: https://img.shields.io/github/v/release/AndyNew2/hacs-APsystemsEZ1_local?label=upstream%20version&style=for-the-badge
 [upstream-repo]: https://github.com/AndyNew2/hacs-APsystemsEZ1_local

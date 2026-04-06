@@ -59,7 +59,7 @@ jobs:
           find . -type f \( -name "README.md" \) -print0 | xargs -0 sed -i 's/apsystemsapi_local/apsystems/g'
 
           # 11. Badge-URLs auf dein Repo umbiegen (Shields.io etc.)
-          find . -type f \( -name "README.md" \) -print0 | xargs -0 sed -i 's/AndyNew2\/hacs-APsystemsEZ1_local/thowiegit\/hacs-APsystemsEZ1_local_API/g'
+          find . -type f \( -name "README.md" \) -print0 | xargs -0 sed -i 's/AndyNew2\/hacs-APsystemsEZ1_local/thowiegit\/hacs-APsystemsEZ1_local/g'
 
           # 12. Upstream-Badge wieder einfügen (falls durch Merge gelöscht)
           # Wir prüfen, ob das Badge schon da ist, wenn nicht: wieder einfügen
