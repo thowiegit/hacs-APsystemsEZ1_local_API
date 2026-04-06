@@ -1,12 +1,12 @@
-# hacs-APsystemsEZ1_local
-Modification of popular EZ1 Microinverter to fix a few flaws, APsystems seems not to do
+# hacs-APsystemsEZ1_local_API
+Modification of popular EZ1 Microinverter Integration to fix a few flaws, APsystems seems not to do
 Keywords: Home Assistant HA - APsystem EZ1 EZ1-M - Microinverter - Microwechselrichter
 
 > [!IMPORTANT]
 > **This integration is not affiliated with APsystem and is provided as-is and without warranty.**
 > **Diese integration ist ohne Hilfe von APsystems erstellt und wird so wie sie ist zur Verfügung gestellt, ohne Garantie und Haftung.**
 
-# APsystems EZ1 local Integration
+# APsystems EZ1 local API Integration
 
 [![GitHub Release][releases-shield]][releases]
 [![GitHub Activity][commits-shield]][commits]
@@ -45,18 +45,18 @@ Platform | Beschreibung
 
 ### Installation mit HACS Repository (Empfohlen)
 
-[![Öffnen Sie Ihr Home Assistant und gehen Sie in das Repository im Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=AndyNew2&repository=hacs-APsystemsEZ1_local&category=integration)
+[![Öffnen Sie Ihr Home Assistant und gehen Sie in das Repository im Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=AndyNew2&repository=hacs-APsystemsEZ1_local_API&category=integration)
 
 1. Installieren Sie HACS [HACS](https://hacs.xyz/) und führen Sie das zugehörige Setup aus.
 2. Gehen Sie in HACS und selektieren "Integrations".
-3. Fügen Sie `AndyNew2/hacs-APsystemsEZ1_local` ein, mit der Kathegorie "Integration" als ein [Benutzer Repository](https://hacs.xyz/docs/faq/custom_repositories/). Oder einfacher, benutzen Sie einfach den Link nach "Installation mit HACS Repository (Empfohlen)".
+3. Fügen Sie `AndyNew2/hacs-APsystemsEZ1_local_API` ein, mit der Kathegorie "Integration" als ein [Benutzer Repository](https://hacs.xyz/docs/faq/custom_repositories/). Oder einfacher, benutzen Sie einfach den Link nach "Installation mit HACS Repository (Empfohlen)".
 Falls möglich gleich den "Download" Button nutzen und die aktuelle Version der Integration herunterladen, sonst verschwindet das neue Repository gleich wieder.
 4. Wählen Sie "APsystems Local API" von der Liste oder beim Dialog oben klicken auf "Download".
 5. Anschließend müssen Sie Home Assistant neu starten, damit die Integration verfügbar wird.
 
 ### Installation der Integration APsystems Local API
 
-[![Hinzufügen der Integration zu Home Assistant!](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=apsystemsapi_local)
+[![Hinzufügen der Integration zu Home Assistant!](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=apsystems)
 
 Die integration erscheint nun wie jede andere Home Assistant integration. Die ursprüngliche HA APsystems Core integration wird durch diese Integration ersetzt.
 Sie müssen jedoch wie oben beschrieben Home Assistant einmal neu starten.
@@ -69,7 +69,7 @@ Nun können wir unseren Wechselrichter hinzufügen mit dem Konfigurations-Dialog
 ### Manual Installation
 
 Erzeugen Sie ein Unterverzeichnis in homeassistant/custom_components
-1. Ein Unterverzeichnis mit dem Namen "apsystemsapi_local"
+1. Ein Unterverzeichnis mit dem Namen "apsystems"
 2. Kopieren Sie alle Files hier in dieses Verzeichnis auch mit dem Unterverzeichnis translations.
 3. Neustart von Home Assistant! Wichtig, nicht vergessen.
 4. In den Geräten, suchen Sie nun "APsystems Local API". Konfiguration nach dem Konfig-Dialog, wie unten beschrieben.
@@ -82,10 +82,10 @@ Erzeugen Sie ein Unterverzeichnis in homeassistant/custom_components
 
 **Fertig! Viel Freude mit der verbesserten Integration.**
 
-[commits-shield]: https://img.shields.io/github/commit-activity/y/AndyNew2/hacs-APsystemsEZ1_local.svg?style=for-the-badge
-[commits]: https://github.com/AndyNew2/hacs-APsystemsEZ1_local/commits/master
+[commits-shield]: https://img.shields.io/github/commit-activity/y/AndyNew2/hacs-APsystemsEZ1_local_API.svg?style=for-the-badge
+[commits]: https://github.com/AndyNew2/hacs-APsystemsEZ1_local_API/commits/master
 [hacs]: https://github.com/hacs/integration
 [hacsbadge]: https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge
-[license-shield]: https://img.shields.io/github/license/AndyNew2/hacs-APsystemsEZ1_local.svg?style=for-the-badge
-[releases-shield]: https://img.shields.io/github/release/AndyNew2/hacs-APsystemsEZ1_local.svg?style=for-the-badge
-[releases]: https://github.com/AndyNew2/hacs-APsystemsEZ1_local/releases
+[license-shield]: https://img.shields.io/github/license/AndyNew2/hacs-APsystemsEZ1_local_API.svg?style=for-the-badge
+[releases-shield]: https://img.shields.io/github/release/AndyNew2/hacs-APsystemsEZ1_local_API.svg?style=for-the-badge
+[releases]: https://github.com/AndyNew2/hacs-APsystemsEZ1_local_API/releases
