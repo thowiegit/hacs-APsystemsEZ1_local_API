@@ -8,8 +8,8 @@ Keywords: Home Assistant HA - APsystem EZ1 EZ1-M - Microinverter - Microwechselr
 
 # APsystems EZ1 local API Integration
 
-[![GitHub Release][releases-shield]
-[![Upstream Release][upstream-shield]][upstream-repo]][releases]
+[![GitHub Release][releases-shield]][releases]
+[![Upstream Release][upstream-shield]][upstream-repo]
 [![GitHub Activity][commits-shield]][commits]
 [![License][license-shield]](LICENSE)
 

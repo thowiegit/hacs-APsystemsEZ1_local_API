@@ -66,8 +66,8 @@ jobs:
           if ! grep -q "\[upstream-shield\]" README.md; then
 
             # Füge den Platzhalter oben ein:
-            # Suche nach der Zeile mit [releases-shield] und füge die Upstream-Zeile DARUNTER ein
-            sed -i '0,/\[releases-shield\]/ s/\[releases-shield\]/&\n[![Upstream Release][upstream-shield]][upstream-repo]/' README.md
+            # Füge den Platzhalter NACH der ersten kompletten Link-Referenz von [releases] ein
+            sed -i '0,/\]\[releases\]/ s/\]\[releases\]/&\n[![Upstream Release][upstream-shield]][upstream-repo]/' README.md
 
             # Füge die URL-Definitionen ganz am Ende der Datei an
             echo "[upstream-shield]: https://img.shields.io/github/v/release/AndyNew2/hacs-APsystemsEZ1_local?label=upstream%20version&style=for-the-badge" >> README.md
