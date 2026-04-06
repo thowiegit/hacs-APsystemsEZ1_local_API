@@ -58,6 +58,9 @@ jobs:
           # 10. Letzte Reste von apsystemsapi_local in README ersetzen
           find . -type f \( -name "README.md" \) -print0 | xargs -0 sed -i 's/apsystemsapi_local/apsystems/g'
 
+          # 11. dynamische Badges in README anpassen
+          find . -type f \( -name "README.md" \) -print0 | xargs -0 sed -i 's/AndyNew2\/hacs-APsystemsEZ1_local/thowiegit\/hacs-APsystemsEZ1_local_API/g'
+
       - name: Commit and Push
         run: |
           git add .

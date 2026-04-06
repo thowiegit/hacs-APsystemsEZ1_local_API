@@ -49,7 +49,7 @@ Platform | Beschreibung
 
 1. Installieren Sie HACS [HACS](https://hacs.xyz/) und führen Sie das zugehörige Setup aus.
 2. Gehen Sie in HACS und selektieren "Integrations".
-3. Fügen Sie `AndyNew2/hacs-APsystemsEZ1_local_API` ein, mit der Kathegorie "Integration" als ein [Benutzer Repository](https://hacs.xyz/docs/faq/custom_repositories/). Oder einfacher, benutzen Sie einfach den Link nach "Installation mit HACS Repository (Empfohlen)".
+3. Fügen Sie `thowiegit/hacs-APsystemsEZ1_local_API_API` ein, mit der Kathegorie "Integration" als ein [Benutzer Repository](https://hacs.xyz/docs/faq/custom_repositories/). Oder einfacher, benutzen Sie einfach den Link nach "Installation mit HACS Repository (Empfohlen)".
 Falls möglich gleich den "Download" Button nutzen und die aktuelle Version der Integration herunterladen, sonst verschwindet das neue Repository gleich wieder.
 4. Wählen Sie "APsystems Local API" von der Liste oder beim Dialog oben klicken auf "Download".
 5. Anschließend müssen Sie Home Assistant neu starten, damit die Integration verfügbar wird.
@@ -82,10 +82,10 @@ Erzeugen Sie ein Unterverzeichnis in homeassistant/custom_components
 
 **Fertig! Viel Freude mit der verbesserten Integration.**
 
-[commits-shield]: https://img.shields.io/github/commit-activity/y/AndyNew2/hacs-APsystemsEZ1_local_API.svg?style=for-the-badge
-[commits]: https://github.com/AndyNew2/hacs-APsystemsEZ1_local_API/commits/master
+[commits-shield]: https://img.shields.io/github/commit-activity/y/thowiegit/hacs-APsystemsEZ1_local_API_API.svg?style=for-the-badge
+[commits]: https://github.com/thowiegit/hacs-APsystemsEZ1_local_API_API/commits/master
 [hacs]: https://github.com/hacs/integration
 [hacsbadge]: https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge
-[license-shield]: https://img.shields.io/github/license/AndyNew2/hacs-APsystemsEZ1_local_API.svg?style=for-the-badge
-[releases-shield]: https://img.shields.io/github/release/AndyNew2/hacs-APsystemsEZ1_local_API.svg?style=for-the-badge
-[releases]: https://github.com/AndyNew2/hacs-APsystemsEZ1_local_API/releases
+[license-shield]: https://img.shields.io/github/license/thowiegit/hacs-APsystemsEZ1_local_API_API.svg?style=for-the-badge
+[releases-shield]: https://img.shields.io/github/release/thowiegit/hacs-APsystemsEZ1_local_API_API.svg?style=for-the-badge
+[releases]: https://github.com/thowiegit/hacs-APsystemsEZ1_local_API_API/releases
