@@ -13,13 +13,35 @@
                     "base_produced_p2": "Basis produziert P2 (kWh)",
                     "ip_address": "IP-Adresse",
                     "port": "Port",
-                    "update_interval": "Update-Intervall (Sekunden)"
+                    "update_interval": "Update-Intervall (Sekunden)",
+                    "use_api_v2": "Benutze API v2 (>v1.9.0)"
                 },
                 "data_description": {
                     "base_produced_p1": "Kompensation des Microinverter Fehlers. Reset auf 0 wird kompensiert nach 240-260kWh. Dies ist für Port 1",
                     "base_produced_p2": "Kompensation des Microinverter Fehlers für Port 2. Jeder Port wird separat kompensiert. Weitere Overruns kompensiert die Integration für sich alleine.",
                     "port": "Standard port is 8050. Fall nicht gesetzt, wird dies benutzt.",
-                    "update_interval": "Update Zykluszeit in Sekunden. Standard sind 15 Sekunden. Zu kleine Werte (<10) belasten das Home Assistand Entries management und belastet den Micro Inverter und Ihr Netzwerk."
+                    "update_interval": "Update Zykluszeit in Sekunden. Standard sind 15 Sekunden. Zu kleine Werte (<10) belasten das Home Assistand Entries management und belastet den Micro Inverter und Ihr Netzwerk.",
+                    "use_api_v2": "EZ1-M > v1.9.0 unterstützt eine neue API mit mehr Funktionen. Obwohl die alte API weiterhin funktioniert, wird empfohlen, diese Option zu aktivieren, wenn Ihr Microinverter dies unterstützt."
+                }
+            },
+            "reconfigure": {
+                "description": "Hier können Sie die Konfiguration abändern. Die bisherigen Einstellungen sehen Sie im Dialog.",
+                "title": "Konfiguration neu laden",
+                "data": {
+                    "ip_address": "IP-Adresse",
+                    "port": "Port",
+                    "update_interval": "Update-Intervall (Sekunden)",
+                    "base_produced_p1": "Basis produziert P1 (kWh)",
+                    "base_produced_p2": "Basis produziert P2 (kWh)",
+                    "use_api_v2": "Benutze API v2 (>v1.9.0)"
+                },
+                "data_description": {
+                    "ip_address": "IP-Adresse des Microinverters",
+                    "port": "Standard port is 8050. Fall nicht gesetzt, wird dies benutzt.",
+                    "update_interval": "Update Zykluszeit in Sekunden. Standard sind 15 Sekunden. Zu kleine Werte (<10) belasten das Home Assistand Entries management und belastet den Micro Inverter und Ihr Netzwerk.",
+                    "base_produced_p1": "Kompensation des Microinverter Fehlers. Reset auf 0 wird kompensiert nach 240-260kWh. Dies ist für Port 1",
+                    "base_produced_p2": "Kompensation des Microinverter Fehlers für Port 2. Jeder Port wird separat kompensiert. Weitere Overruns kompensiert die Integration für sich alleine.",
+                    "use_api_v2": "EZ1-M > v1.9.0 unterstützt eine neue API mit mehr Funktionen. Es wird empfohlen diese zu benutzen."
                 }
             }
         }
@@ -40,6 +62,9 @@
             }
         },
         "number": {
+            "default_max_output": {
+                "name": "Pers. max. Leistung"
+            },
             "max_output": {
                 "name": "Maximal Leistung"
             }
@@ -71,6 +96,27 @@
             },
             "total_power_p2": {
                 "name": "Leistung P2"
+            },
+            "current_p1": {
+                "name": "Strom von P1"
+            },
+            "current_p2": {
+                "name": "Strom von P2"
+            },
+            "voltage_p1": {
+                "name": "Spannung von P1"
+            },
+            "voltage_p2": {
+                "name": "Spannung von P2"
+            },
+            "grid_frequency": {
+                "name": "Netzfrequenz"
+            },
+            "grid_voltage": {
+                "name": "Netzspannung"
+            },
+            "temperature": {
+                "name": "Interne Temperatur"
             }
         },
         "switch": {

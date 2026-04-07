@@ -16,6 +16,7 @@ from .const import (
     UPDATE_INTERVAL,
     BASE_PRODUCED_P1,
     BASE_PRODUCED_P2,
+    USE_API_V2,
 )
 from .coordinator import (
     ApSystemsConfigEntry,
@@ -46,7 +47,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ApSystemsConfigEntry) ->
 
     bp_p1 = float(entry.data.get(BASE_PRODUCED_P1, 0))
     bp_p2 = float(entry.data.get(BASE_PRODUCED_P2, 0))
-    _LOGGER.info("Configured values for base: p1: %f, p2: %f", bp_p1, bp_p2 )
+    use_api_v2 = bool(entry.data.get(USE_API_V2, True))
+    _LOGGER.info("Configured values for base: p1: %f, p2: %f, use_api_v2: %s", bp_p1, bp_p2, use_api_v2)
 
     coordinator = ApSystemsDataCoordinator(
         hass,
@@ -55,6 +57,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ApSystemsConfigEntry) ->
         interval=entry.data.get(UPDATE_INTERVAL, 15),
         base_produced_p1=bp_p1,
         base_produced_p2=bp_p2,
+        use_api_v2=use_api_v2,
     )
     await coordinator.async_config_entry_first_refresh()
 

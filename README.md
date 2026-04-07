@@ -37,10 +37,11 @@ Platform | Beschreibung
 4. Detektiert selbstständig weitere Overruns (passiert immer so um die 540kWh) und errechnet dann einen neuen Offset, der auch Persistent in HA gespeichert wird. Dieser Offset wird an die Seriennummer des Wechselrichters verbunden, so dass auch mehrere Wechelrichter unterstützt werden können.
 5. Auch nach einem Neustart bleibt der Offset erhalten und man hat keine Rücksprünge mehr und HA errechnet den tatsächlichen erzeugten Energiewert, obwohl der WR wieder bei 0 zum zählen beginnt.
 6. Microrücksprünge bei den Energiewerten anhand von Rundungsproblemen werden mit gespeicherten Werten korrigiert. Es gibt keine HA Warnungen mehr wegen Rücksprünge bei den Energiewerten.
-7. Der Tagereset des Tageszähler war falsch implementiert. Diese Integration korrigiert es.
+7. Der Tagereset des Tageszähler war falsch implementiert. Diese Integration korrigiert es. Die Werte werden jetzt auch zwischengespeichert. Ein Neustart von HA verändert die Tageswerte nun nicht mehr.
 8. Neuere Firmware-Versionen speichern nicht mehr die Maximal-Leistung des Wechselrichters. Über HA wird dies gerne zur Regelung im Zusammenhang eines Akkus genutzt. Diese Integration schreibt den letzten gültigen Maximal-Wert entweder beim Aufwachen am Morgen oder beim Wiedereinschalten. Das Schreiben wird nur dann ausgeführt, wenn der WR selbst die letzten Werte vergessen hat. Bei den alten WR wird kein Schreibzyklus ausgelöst, um dessen Flash-Speicher zu schonen.
 9. Die Alarminformationen werden nicht bei jedem Update-Zyklus gelesen, um die Updaterate zu verbessern.
 10. Die Updaterate kann wieder im Konfigurations-Dialog eingegeben werden. Die Integration unterstützt jetzt auch ein Reconfigure, damit kann man die Konfiguration ohne Löschen und neu anlegen korrigieren.
+11. Unterstützt eine neue API um detaillierte Daten (Spannungen, Ströme, Netzfrequenz, Netzspannungen, .. ) anzuzeigen.
 
 ## Installation
 
@@ -48,9 +49,9 @@ Platform | Beschreibung
 
 [![Öffnen Sie Ihr Home Assistant und gehen Sie in das Repository im Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=AndyNew2&repository=hacs-APsystemsEZ1_local_API&category=integration)
 
-1. Installieren Sie HACS [HACS](https://hacs.xyz/) und führen Sie das zugehörige Setup aus.
+1. Installieren Sie [HACS](https://hacs.xyz/) und führen Sie das zugehörige Setup aus.
 2. Gehen Sie in HACS und selektieren "Integrations".
-3. Fügen Sie `thowiegit/hacs-APsystemsEZ1_local_API` ein, mit der Kathegorie "Integration" als ein [Benutzer Repository](https://hacs.xyz/docs/faq/custom_repositories/). Oder einfacher, benutzen Sie einfach den Link nach "Installation mit HACS Repository (Empfohlen)".
+3. Fügen Sie `AndyNew2/hacs-APsystemsEZ1_local` mit der Kathegorie "Integration" als [Benutzer Repository](https://hacs.xyz/docs/faq/custom_repositories/) ein. Oder einfacher, benutzen Sie einfach den Link nach "Installation mit HACS Repository (Empfohlen)".
 Falls möglich gleich den "Download" Button nutzen und die aktuelle Version der Integration herunterladen, sonst verschwindet das neue Repository gleich wieder.
 4. Wählen Sie "APsystems Local API" von der Liste oder beim Dialog oben klicken auf "Download".
 5. Anschließend müssen Sie Home Assistant neu starten, damit die Integration verfügbar wird.
@@ -67,7 +68,7 @@ Nun können wir unseren Wechselrichter hinzufügen mit dem Konfigurations-Dialog
 1. In der HA GUI gehen Sie zu "Einstellungen" -> "Geräte & Dienste". Unten rechts klicken Sie auf "Integration hinzufügen". Dann suchen Sie nach "APsystems Local API" (nicht die APSystems nehmen). Oder benutzen Sie einfach den Link oben.
 2. Gehen Sie durch den Konfig-Dialog, anschließend ist Ihr Wechselrichter in Home Assistant eingerichtet.
 
-### Manual Installation
+### Manuelle Installation
 
 Erzeugen Sie ein Unterverzeichnis in homeassistant/custom_components
 1. Ein Unterverzeichnis mit dem Namen "apsystems"
@@ -83,8 +84,14 @@ Erzeugen Sie ein Unterverzeichnis in homeassistant/custom_components
 
 **Fertig! Viel Freude mit der verbesserten Integration.**
 
-[commits-shield]: https://img.shields.io/github/commit-activity/y/thowiegit/hacs-APsystemsEZ1_local_API.svg?style=for-the-badge
-[commits]: https://github.com/thowiegit/hacs-APsystemsEZ1_local_API/commits/master
+
+## Hinweise
+- Diese Integration erneuert (updated) nicht alle Sensoren zur gleichen Zeit. Spannungs-, Strom- und Leistungswerte werden mit der eingegebenen Updaterate erneuert. Andere Werte, wie Ein/Aus Status, Maximalleistungseinstellungen, Alarme, etc. werden weniger häufig geupdated. Bitte nach dem Start der Integration etwas abwarten, es werden alle Sensoren aktiviert.
+- Der Persistente (im Flash Speicher) befindliche Maximal-Leistungswert kann in neueren Firmwareversionen nicht mehr häufig geschrieben werden. Dies ist eine Art Schutz, die sehr sinnvoll ist. Leider gibt der Wechelrichter hierzu keine passende Fehlermeldung, wodurch diese Integration nicht unterscheiden kann, warum das Schreiben nicht funktioniert hat. Falls das Schreiben nicht klappt, bitte etwas abwarten (ca. 45 Minuten). Auch wiederholte Versuche zählen als Schreibzugriff, wodurch diese Wartezeit verlängert wird. Also alles in Ruhe lassen und nach der angegebenen Zeit einen Schreibzugriff probieren, dann sollte es auch klappen.
+- Diese Integration nutzt standardmäßig die neue API mit viel mehr Sensorwerten und dem neuen DefaultMaxPower Flash-Speicher. Sollte Ihr Wechelrichter Probleme mit der neuen API haben (weil Sie z.B. noch eine ältere Firmware <1.7.x nutzen), können Sie im Konfigurationsdialog die neue API abschalten. Hierzu einfach den entsprechenden Schalter am Ende des Dialogs abwählen.
+
+[commits-shield]: https://img.shields.io/github/commit-activity/y/AndyNew2/hacs-APsystemsEZ1_local.svg?style=for-the-badge
+[commits]: https://github.com/AndyNew2/hacs-APsystemsEZ1_local/commits/master
 [hacs]: https://github.com/hacs/integration
 [hacsbadge]: https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge
 [license-shield]: https://img.shields.io/github/license/thowiegit/hacs-APsystemsEZ1_local_API.svg?style=for-the-badge

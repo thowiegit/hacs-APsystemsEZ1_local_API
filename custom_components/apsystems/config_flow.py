@@ -21,6 +21,7 @@ from .const import (
     BASE_PRODUCED_P2,
     DAILY_DEBOUNCE_P1,
     DAILY_DEBOUNCE_P2,
+    USE_API_V2,
 )
 
 import logging
@@ -32,10 +33,9 @@ DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_IP_ADDRESS): cv.string,
         vol.Optional(CONF_PORT, default=DEFAULT_PORT): cv.port,
         vol.Optional(UPDATE_INTERVAL, default=15): int,
-        vol.Optional(
-            BASE_PRODUCED_P1
-        ): cv.string,  # due to a bug, we need to read here a string and convert later
+        vol.Optional(BASE_PRODUCED_P1): cv.string,  # due to a bug, we need to read here a string and convert later
         vol.Optional(BASE_PRODUCED_P2): cv.string,
+        vol.Required(USE_API_V2, default=True): bool,
     }
 )
 
@@ -167,6 +167,7 @@ class APsystemsLocalAPIFlow(ConfigFlow, domain=DOMAIN):
         update_interval_configured = self._get_reconfigure_entry().data.get(UPDATE_INTERVAL, 15)
         base_produced_p1_configured: float = self._get_reconfigure_entry().data.get(BASE_PRODUCED_P1, "")
         base_produced_p2_configured: float = self._get_reconfigure_entry().data.get(BASE_PRODUCED_P2, "")
+        use_api_v2: bool = self._get_reconfigure_entry().data.get(USE_API_V2, True)
 
         session = async_get_clientsession(self.hass, False)
         api = APsystemsEZ1M(
@@ -205,6 +206,7 @@ class APsystemsLocalAPIFlow(ConfigFlow, domain=DOMAIN):
                     ): cv.string,
                     #                       vol.Optional(BASE_PRODUCED_P1, default=base_produced_p1_configured): vol.Coerce(float),   do not work either
                     #                       vol.Optional(BASE_PRODUCED_P2, default=base_produced_p2_configured): vol.Coerce(float)
+                    vol.Required(USE_API_V2, default=use_api_v2): bool,
                 }
             ),
             errors=errors,

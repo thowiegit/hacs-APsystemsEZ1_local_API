@@ -14,7 +14,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import UnitOfEnergy, UnitOfPower
+from homeassistant.const import UnitOfElectricCurrent, UnitOfElectricPotential, UnitOfEnergy, UnitOfFrequency, UnitOfPower, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import DiscoveryInfoType, StateType
@@ -27,7 +27,7 @@ from .entity import ApSystemsEntity
 @dataclass(frozen=True, kw_only=True)
 class ApsystemsLocalApiSensorDescription(SensorEntityDescription):
     """Describes Apsystens Inverter sensor entity."""
-
+    need_api_v2: bool = False
     value_fn: Callable[[ReturnOutputData], float | None]
 
 
@@ -55,6 +55,76 @@ SENSORS: tuple[ApsystemsLocalApiSensorDescription, ...] = (
         device_class=SensorDeviceClass.POWER,
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda c: c.p2,
+    ),
+    ApsystemsLocalApiSensorDescription(
+        key="current_p1",
+        translation_key="current_p1",
+        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+        device_class=SensorDeviceClass.CURRENT,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=3,
+        need_api_v2=True,
+        value_fn=lambda c: c.c1,
+    ),
+    ApsystemsLocalApiSensorDescription(
+        key="current_p2",
+        translation_key="current_p2",
+        native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
+        device_class=SensorDeviceClass.CURRENT,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=3,
+        need_api_v2=True,
+        value_fn=lambda c: c.c2,
+    ),
+    ApsystemsLocalApiSensorDescription(
+        key="voltage_p1",
+        translation_key="voltage_p1",
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        device_class=SensorDeviceClass.VOLTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=3,
+        need_api_v2=True,
+        value_fn=lambda c: c.v1,
+    ),
+    ApsystemsLocalApiSensorDescription(
+        key="voltage_p2",
+        translation_key="voltage_p2",
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        device_class=SensorDeviceClass.VOLTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=3,
+        need_api_v2=True,
+        value_fn=lambda c: c.v2,
+    ),
+    ApsystemsLocalApiSensorDescription(
+        key="grid_frequency",
+        translation_key="grid_frequency",
+        native_unit_of_measurement=UnitOfFrequency.HERTZ,
+        device_class=SensorDeviceClass.FREQUENCY,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=2,
+        need_api_v2=True,
+        value_fn=lambda c: c.gf,
+    ),
+    ApsystemsLocalApiSensorDescription(
+        key="grid_voltage",
+        translation_key="grid_voltage",
+        native_unit_of_measurement=UnitOfElectricPotential.VOLT,
+        device_class=SensorDeviceClass.VOLTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
+        need_api_v2=True,
+        value_fn=lambda c: c.gv,
+    ),
+    ApsystemsLocalApiSensorDescription(
+        key="temperature",
+        translation_key="temperature",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
+        need_api_v2=True,
+        value_fn=lambda c: c.t,
     ),
     ApsystemsLocalApiSensorDescription(
         key="lifetime_production",
@@ -116,13 +186,13 @@ async def async_setup_entry(
     """Set up the sensor platform."""
     config = config_entry.runtime_data
 
-    add_entities(
-        ApSystemsSensorWithDescription(
-            data=config,
-            entity_description=desc,
-        )
-        for desc in SENSORS
-    )
+    add_e_list = []
+    for desc in SENSORS:
+        if (not desc.need_api_v2 or config.coordinator.use_api_v2):
+            add_e_list.append( ApSystemsSensorWithDescription(data=config, entity_description=desc) )
+
+    add_entities(add_e_list)
+
 
 
 class ApSystemsSensorWithDescription(
