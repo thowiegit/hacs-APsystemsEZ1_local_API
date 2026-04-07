@@ -9,6 +9,7 @@ from aiohttp.http_exceptions import HttpBadRequest
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class InverterReturnedError(Exception):
     pass
 
@@ -42,9 +43,9 @@ class ReturnOutputData:
     te2: float
 
     def __init__(self, **data):
-        '''The data attribute needs to be set manually because the inverter local interface
+        """The data attribute needs to be set manually because the inverter local interface
         may return more results than the existing data attributes (such as originalData),
-          resulting in an error. '''
+          resulting in an error."""
         self.p1 = data.get("p1", 0.0)
         self.e1 = data.get("e1", 0.0)
         self.te1 = data.get("te1", 0.0)
@@ -52,9 +53,44 @@ class ReturnOutputData:
         self.e2 = data.get("e2", 0.0)
         self.te2 = data.get("te2", 0.0)
 
+@dataclass
+class ReturnDetailedOutputData:
+    c1: float
+    v1: float
+    p1: float
+    e1: float
+    te1: float
+    c2: float
+    v2: float
+    p2: float
+    e2: float
+    te2: float
+    gf: float
+    gv: float
+    t: float
+
+    def __init__(self, **data):
+        """The data attribute needs to be set manually because the inverter local interface
+        may return more results than the existing data attributes (such as originalData),
+          resulting in an error."""
+        self.c1 = data.get("c1", 0.0)
+        self.v1 = data.get("v1", 0.0)
+        self.p1 = data.get("p1", 0.0)
+        self.e1 = data.get("e1", 0.0)
+        self.te1 = data.get("te1", 0.0)
+        self.c2 = data.get("c2", 0.0)
+        self.v2 = data.get("v2", 0.0)
+        self.p2 = data.get("p2", 0.0)
+        self.e2 = data.get("e2", 0.0)
+        self.te2 = data.get("te2", 0.0)
+        self.gf = data.get("gf", 0.0)
+        self.gv = data.get("gv", 0.0)
+        self.t = data.get("t", 0.0)
+
 IS_BATTERY_REGEX = re.compile("^.*_b$")
 
 MAX_RETRY_UNAVAILABLE = 7
+
 
 class APsystemsEZ1M:
     """This class represents an EZ1 Microinverter and provides methods to interact with it
@@ -112,7 +148,9 @@ class APsystemsEZ1M:
         :raises: Prints an error message if the HTTP request fails for any reason.
         """
         if self.currently_active:
-            _LOGGER.info(f"Request to {endpoint} skipped because another request is currently active.")
+            _LOGGER.info(
+                f"Request to {endpoint} skipped because another request is currently active."
+            )
             raise InverterReturnedError("Double execution of EZ1 requests detected.")
 
         url = f"{self.base_url}/{endpoint}"
@@ -147,17 +185,25 @@ class APsystemsEZ1M:
                                 self.currently_unavailable = 0  # reset unavailable counter on success, however we do not want to reset it when we are already in unavailable state, we leave it to max value, so we can detect the next available state and react on it.
                             return data
                         else:
-                            raise InverterReturnedError(f"Request to {endpoint} failed with message: {data['message']}")
-                except:
+                            raise InverterReturnedError(
+                                f"Request to {endpoint} failed with message: {data['message']}"
+                            )
+                except Exception as e:
                     retryCounter -= 1
                     if retryCounter <= 0:
                         raise
                     self.currently_unavailable += 1
                     if self.currently_unavailable > MAX_RETRY_UNAVAILABLE:
-                        _LOGGER.debug(f"Multiple ({self.currently_unavailable} times) consecutive failures when requesting {endpoint}. Marking device as unavailable.")
-                        raise InverterReturnedError(f"Request to {endpoint} failed after multiple retries.")
+                        _LOGGER.debug(
+                            f"Multiple ({self.currently_unavailable} times) consecutive failures when requesting {endpoint}. Marking device as unavailable."
+                        )
+                        raise InverterReturnedError(
+                            f"Request to {endpoint} failed after multiple retries."
+                        )
                     # Re-run request when the inverter returned failed because of unknown reason
-                    _LOGGER.debug(f"The request to {endpoint} failed. Retrying (retry count: {retryCounter})...")
+                    _LOGGER.debug(
+                        f"The request to {endpoint} failed with error: {e}. Retrying (retry count: {retryCounter})..."
+                    )
 
                 await asyncio.sleep(1)  # Add a short delay before retrying
 
@@ -178,12 +224,21 @@ class APsystemsEZ1M:
             state.base_state = state.base_state + state.old_state
 
         if (state.last_update == -1) and isinstance(new_state, float):
-            state.last_update = dt_util.now().day  # initialize with current day, so we do not get a reset on the first run.
+            state.last_update = (
+                dt_util.now().day
+            )  # initialize with current day, so we do not get a reset on the first run.
 
         # reset basis each day
-        if (state.last_update != dt_util.now().day) and isinstance(new_state, float) and isinstance(state.old_state, float) and (state.old_state >= 0.0):
+        if (
+            (state.last_update != dt_util.now().day)
+            and isinstance(new_state, float)
+            and isinstance(state.old_state, float)
+            and (state.old_state >= 0.0)
+        ):
             state.last_update = dt_util.now().day
-            state.base_state = -state.old_state  # we need to substract startvalue of daystart to start with a 0 at 00:00
+            state.base_state = (
+                -state.old_state
+            )  # we need to substract startvalue of daystart to start with a 0 at 00:00
 
         state.old_state = new_state
 
@@ -229,7 +284,9 @@ class APsystemsEZ1M:
                 ipAddr=response["data"]["ipAddr"],
                 minPower=int(response["data"]["minPower"]),
                 maxPower=int(response["data"]["maxPower"]),
-                isBatterySystem=bool(IS_BATTERY_REGEX.match(response["data"]["devVer"]))
+                isBatterySystem=bool(
+                    IS_BATTERY_REGEX.match(response["data"]["devVer"])
+                ),
             )
             if response and response.get("data")
             else None
@@ -284,11 +341,8 @@ class APsystemsEZ1M:
         response = await self._request("getOutputData")
         if response:
             response["data"] = {
-                key: float(value)
-                if isinstance(value, int)
-                else value
-                for key, value
-                in response["data"].items()
+                key: float(value) if isinstance(value, int) else value
+                for key, value in response["data"].items()
             }
 
         if self.enable_debounce and response:
@@ -300,6 +354,38 @@ class APsystemsEZ1M:
             )
 
         return ReturnOutputData(**response["data"]) if response else None
+
+
+    async def get_detailed_output_data(self) -> ReturnDetailedOutputData | None:
+        """
+        Retrieves the output data from the device. This method calls a private method `_request`
+        with the endpoint "getOutputDataDetail" to fetch the device's output data.
+
+        The response contains the following attributes:
+        .. see ReturnOutputData for the attributes of the output data, and additionally:
+
+        :return: Information about energy/power-related information
+        """
+        response = await self._request("getOutputDataDetail")
+        # _LOGGER.debug(f"get_detailed_output_data response: {response}")
+        """  This code below looks like it should restruture the response, however no difference seen at all
+        if response:
+            response["data"] = {
+                key: float(value) if isinstance(value, int) else value
+                for key, value in response["data"].items()
+            }
+        """
+
+        # _LOGGER.debug(f"get_detailed_output_data response: {response}")
+
+        if self.enable_debounce and response:
+            response["data"].update(
+                {
+                    "e1": self._debounce(self._e1, response["data"]["e1"]),
+                    "e2": self._debounce(self._e2, response["data"]["e2"]),
+                }
+            )
+        return ReturnDetailedOutputData(**response["data"]) if response else None
 
     async def get_total_output(self) -> float | None:
         """
@@ -351,22 +437,43 @@ class APsystemsEZ1M:
             return None
 
         new_max_power = int(response["data"]["maxPower"])
-        if (self.currently_unavailable > MAX_RETRY_UNAVAILABLE) and (self.saved_max_power >= 30):
+        if (self.currently_unavailable > MAX_RETRY_UNAVAILABLE) and (
+            self.saved_max_power >= 30
+        ):
             # so this is the first successful call, after an unavailable period.
             # newer firmware version > 1.10.x do not store anymore the max_power, therefore we need to tell the max_power now
-            if ((new_max_power == 800) and (self.saved_max_power != new_max_power)) or (new_max_power == 0):
+            if ((new_max_power == 800) and (self.saved_max_power != new_max_power)) or (
+                new_max_power == 0
+            ):
                 try:
                     await asyncio.sleep(3)  # Add a short delay before next command
                     new_max_power = self.saved_max_power
                     await self.set_max_power(self.saved_max_power)
                 except:
-                    pass # ignore all further errors here, ..
+                    pass  # ignore all further errors here, ..
 
-        self.currently_unavailable = 0  # we got a value, therefore reset unavailable counter.
+        self.currently_unavailable = (
+            0  # we got a value, therefore reset unavailable counter.
+        )
 
-        if (new_max_power>=30) and (self.saved_max_power<30):
+        if (new_max_power >= 30) and (self.saved_max_power < 30):
             # we just change stored value if current saved values is unvalid. This prevents destroying the saved value with sporadic successful reads.
-            self.saved_max_power = new_max_power # lower values are not accepted, so this is the new firmware reporting in off state
+            self.saved_max_power = new_max_power  # lower values are not accepted, so this is the new firmware reporting in off state
+        return new_max_power
+
+    async def get_default_max_power(self) -> int | None:
+        """Retrieves the set default maximum power setting of the device. This method makes a request to the
+        "getMaxPower" endpoint and returns a dictionary containing the maximum power limit of the device set by the user.
+
+        :return: Max output power in watts
+        """
+        response = await self._request("getDefaultMaxPower")
+
+        _LOGGER.debug(f"get_default_max_power response: {response}")
+        if response is None or response["data"]["power"] == "":
+            return None
+
+        new_max_power = int(response["data"]["power"])
         return new_max_power
 
     async def set_max_power(self, power_limit: int) -> int | None:
@@ -397,6 +504,25 @@ class APsystemsEZ1M:
         else:
             return None
 
+    async def set_default_max_power(self, power_limit: int) -> int | None:
+        """
+        Sets the default maximum power limit of the device. This method sends a request to the "setDefaultMaxPower"
+        endpoint with the specified power limit as a parameter. The power limit must be an integer
+        within the range of 30 to 800 watts.
+        This function can be called only once per 30 minutes. More often calls will be cancelled by FAULT
+
+        """
+        if not self.min_power <= power_limit <= self.max_power:
+            raise ValueError(
+                f"Invalid setDefaultMaxPower value: expected int between '30' and '800', got '{power_limit}'"
+            )
+        request = await self._request(f"setDefaultMaxPower?p={power_limit}")
+        _LOGGER.debug(f"set_default_max_power response: {request}")
+        if request:
+            return int(request["data"]["power"])
+        else:
+            return None
+
     async def get_device_power_status(self) -> bool:
         """
         Retrieves the current power status of the device. This method sends a request to the
@@ -410,7 +536,7 @@ class APsystemsEZ1M:
         """
         response = await self._request("getOnOff")
 
-        match (status := response["data"]["status"]):
+        match status := response["data"]["status"]:
             case int():
                 return not bool(status)
             case str() if status.isdigit():
@@ -446,11 +572,13 @@ class APsystemsEZ1M:
 
         if power_status:
             try:
-               await asyncio.sleep(7)  # Add a short delay before next command
-               # newer firmware version > 1.10.x resets max power to 800W when switching on, therefore we reset the old max_power value.
-               if (self.saved_max_power<800) and (self.saved_max_power>=30):  # we do not need to write 800 (is default anyway), therefore <800 and not <=800.
-                   await self.set_max_power(self.saved_max_power)
+                await asyncio.sleep(7)  # Add a short delay before next command
+                # newer firmware version > 1.10.x resets max power to 800W when switching on, therefore we reset the old max_power value.
+                if (
+                    (self.saved_max_power < 800) and (self.saved_max_power >= 30)
+                ):  # we do not need to write 800 (is default anyway), therefore <800 and not <=800.
+                    await self.set_max_power(self.saved_max_power)
             except:
-               pass  # ignore all errors here, as the max power value is already validated when set and we don't want to raise an error when trying to set it again on power on
+                pass  # ignore all errors here, as the max power value is already validated when set and we don't want to raise an error when trying to set it again on power on
 
         return not bool(int(request["data"]["status"])) if request else None
