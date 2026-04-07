@@ -10,6 +10,7 @@ from .APsystemsEZ1 import (
     APsystemsEZ1M,
     InverterReturnedError,
     ReturnAlarmInfo,
+    ReturnDetailedOutputData,
     ReturnOutputData,
 )
 
@@ -31,7 +32,7 @@ _LOGGER = logging.getLogger(__name__)
 class ApSystemsSensorData:
     """Representing different Apsystems sensor data."""
 
-    output_data: ReturnOutputData
+    output_data: ReturnDetailedOutputData
     alarm_info: ReturnAlarmInfo
 
 
@@ -66,6 +67,7 @@ class StoreApsystemsData:
 
 
 from .number import ApSystemsMaxOutputNumber
+from .number import ApSystemsDefaultMaxOutputNumber
 from .switch import ApSystemsInverterSwitch
 
 
@@ -91,6 +93,7 @@ class APSystemsSlowUpdateCoordinator(DataUpdateCoordinator):
         )
         self._coordinator = coordinator
         self._maxOutputNumber = None
+        self._defaultMaxOutputNumber = None
         self._powerSwitch = None
         self._toggleCounter: int = 0
         _LOGGER.debug("APSystemsSlowCoordinator: Created...")
@@ -98,6 +101,10 @@ class APSystemsSlowUpdateCoordinator(DataUpdateCoordinator):
     def setMaxOutPutEntity(self, maxOutPut: ApSystemsMaxOutputNumber):
         """Defines max output entity."""
         self._maxOutputNumber = maxOutPut
+
+    def setDefaultMaxOutPutEntity(self, defaultMaxOutPut: ApSystemsDefaultMaxOutputNumber):
+        """Defines default max output entity."""
+        self._defaultMaxOutputNumber = defaultMaxOutPut
 
     def setPowerSwitchEntity(self, powerSwitch: ApSystemsInverterSwitch):
         """Defines power switch entity."""
@@ -138,9 +145,12 @@ class APSystemsSlowUpdateCoordinator(DataUpdateCoordinator):
                 True  # Set coordinator to running state to prevent concurrent updates
             )
 
-            if self._toggleCounter % 2 == 1:
+            if (self._toggleCounter % 3 == 1) or (self._maxOutputNumber.native_value is None):
                 await self._maxOutputNumber.async_update()  # Update the max output number as part of the coordinator's update cycle
-            else:
+            if (self._toggleCounter % 3 == 2) or (self._defaultMaxOutputNumber is not None and self._defaultMaxOutputNumber.native_value is None):
+                if self._defaultMaxOutputNumber is not None:
+                    await self._defaultMaxOutputNumber.async_update()  # Update the default max output number as part of the coordinator's update cycle
+            if (self._toggleCounter % 3 == 0) or (self._powerSwitch.is_on is None):
                 await self._powerSwitch.async_update()
 
             self._toggleCounter += 1
@@ -165,6 +175,7 @@ class ApSystemsDataCoordinator(DataUpdateCoordinator[ApSystemsSensorData]):
         interval: int = 5,
         base_produced_p1: float = 0,
         base_produced_p2: float = 0,
+        use_api_v2: bool = True,
     ) -> None:
         """Initialize my coordinator."""
         super().__init__(
@@ -188,12 +199,13 @@ class ApSystemsDataCoordinator(DataUpdateCoordinator[ApSystemsSensorData]):
         # from info: Store is now a Generic class: self._store = Store[dict[str, int]](hass, STORAGE_VERSION, STORAGE_KEY)
         self._store = Store[dict[str, float]](self.hass, 1, f"{DOMAIN}_storage_{self.config_entry.unique_id}")
         self.updateCounter: int = 0
-        self.old_output_data = ReturnOutputData(
-            p1=0, e1=10, te1=20, p2=0, e2=11, te2=22
+        self.old_output_data = ReturnDetailedOutputData(
+            c1=0, v1=0, p1=0, e1=10, te1=11, c2=0, v2=0, p2=0, e2=20, te2=22, gf=0, gv=0, t=0
         )
         self.old_alarm_info = ReturnAlarmInfo(
             offgrid=False, shortcircuit_1=False, shortcircuit_2=False, operating=True
         )
+        self.use_api_v2 = use_api_v2
         self.currently_running: bool = False
 
     async def _async_setup(self) -> None:
@@ -237,7 +249,10 @@ class ApSystemsDataCoordinator(DataUpdateCoordinator[ApSystemsSensorData]):
                 # After 7 unavailable cycles, reduce update rate, since micro inverter is very likely off and cannot response anyhow.
                 self.retrycounter += 1
                 return ApSystemsSensorData(output_data=self.old_output_data, alarm_info=self.old_alarm_info)
-            output_data = await self.api.get_output_data()
+            if self.use_api_v2:
+                output_data = await self.api.get_detailed_output_data()
+            else:
+                output_data = await self.api.get_output_data()
             self.updateCounter += 1
             resetDetected: bool = False
             # 1st check total values
@@ -317,7 +332,11 @@ class ApSystemsDataCoordinator(DataUpdateCoordinator[ApSystemsSensorData]):
             self.retrycounter += 1
             if self.retrycounter > 7:
                 # After 7 unavailable cycles, micro inverter is off, prevent further logs, they are useless
+                self.old_output_data.c1 = 0
+                self.old_output_data.v1 = 0
                 self.old_output_data.p1 = 0
+                self.old_output_data.c2 = 0
+                self.old_output_data.v2 = 0
                 self.old_output_data.p2 = 0
                 _LOGGER.debug(
                     "Inverter returned an error, returning modified old data... (retrycounter: %d)",
