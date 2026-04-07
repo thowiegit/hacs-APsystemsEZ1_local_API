@@ -36,7 +36,7 @@ Platform | Beschreibung
 4. Detektiert selbstständig weitere Overruns (passiert immer so um die 540kWh) und errechnet dann einen neuen Offset, der auch Persistent in HA gespeichert wird. Dieser Offset wird an die Seriennummer des Wechselrichters verbunden, so dass auch mehrere Wechelrichter unterstützt werden können.
 5. Auch nach einem Neustart bleibt der Offset erhalten und man hat keine Rücksprünge mehr und HA errechnet den tatsächlichen erzeugten Energiewert, obwohl der WR wieder bei 0 zum zählen beginnt.
 6. Microrücksprünge bei den Energiewerten anhand von Rundungsproblemen werden mit gespeicherten Werten korrigiert. Es gibt keine HA Warnungen mehr wegen Rücksprünge bei den Energiewerten.
-7. Der Tagereset des Tageszähler war falsch implementiert. Diese Integration korrigiert es.
+7. Der Tagereset des Tageszähler war falsch implementiert. Diese Integration korrigiert es. Die Werte werden jetzt auch zwischengespeichert. Ein Neustart von HA verändert die Tageswerte nun nicht mehr.
 8. Neuere Firmware-Versionen speichern nicht mehr die Maximal-Leistung des Wechselrichters. Über HA wird dies gerne zur Regelung im Zusammenhang eines Akkus genutzt. Diese Integration schreibt den letzten gültigen Maximal-Wert entweder beim Aufwachen am Morgen oder beim Wiedereinschalten. Das Schreiben wird nur dann ausgeführt, wenn der WR selbst die letzten Werte vergessen hat. Bei den alten WR wird kein Schreibzyklus ausgelöst, um dessen Flash-Speicher zu schonen.
 9. Die Alarminformationen werden nicht bei jedem Update-Zyklus gelesen, um die Updaterate zu verbessern.
 10. Die Updaterate kann wieder im Konfigurations-Dialog eingegeben werden. Die Integration unterstützt jetzt auch ein Reconfigure, damit kann man die Konfiguration ohne Löschen und neu anlegen korrigieren.
@@ -67,7 +67,7 @@ Nun können wir unseren Wechselrichter hinzufügen mit dem Konfigurations-Dialog
 1. In der HA GUI gehen Sie zu "Einstellungen" -> "Geräte & Dienste". Unten rechts klicken Sie auf "Integration hinzufügen". Dann suchen Sie nach "APsystems Local API" (nicht die APSystems nehmen). Oder benutzen Sie einfach den Link oben.
 2. Gehen Sie durch den Konfig-Dialog, anschließend ist Ihr Wechselrichter in Home Assistant eingerichtet.
 
-### Manual Installation
+### Manuelle Installation
 
 Erzeugen Sie ein Unterverzeichnis in homeassistant/custom_components
 1. Ein Unterverzeichnis mit dem Namen "apsystemsapi_local"
