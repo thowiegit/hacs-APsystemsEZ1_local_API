@@ -110,10 +110,10 @@
                 "name": "Spannung von P2"
             },
             "grid_frequency": {
-                "name": "Grid frequency"
+                "name": "Netzfrequenz"
             },
             "grid_voltage": {
-                "name": "Netzfrequenz"
+                "name": "Netzspannung"
             },
             "temperature": {
                 "name": "Internale Temperatur"
