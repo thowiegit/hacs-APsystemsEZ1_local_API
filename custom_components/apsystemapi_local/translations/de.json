@@ -116,7 +116,7 @@
                 "name": "Netzspannung"
             },
             "temperature": {
-                "name": "Internale Temperatur"
+                "name": "Interne Temperatur"
             }
         },
         "switch": {
