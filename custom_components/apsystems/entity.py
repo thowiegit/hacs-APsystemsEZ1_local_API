@@ -29,11 +29,11 @@ class ApSystemsEntity(Entity):
             else:
                 sw_version = version_parts[0]
 
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, data.device_id)},
-            manufacturer="APsystems",
-            model="EZ1-M",
-            serial_number=data.device_id,
-            sw_version=sw_version,
-            model_id="Host: "+data.coordinator.api.base_url,
-        )
+            self._attr_device_info = DeviceInfo(
+                identifiers={(DOMAIN, data.device_id)},
+                manufacturer="APsystems",
+                model="EZ1-M",
+                serial_number=data.device_id,
+                sw_version=sw_version,
+                model_id="Host: " + data.coordinator.api.base_url,
+            )

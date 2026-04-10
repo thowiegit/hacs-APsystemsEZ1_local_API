@@ -18,7 +18,7 @@
                 },
                 "data_description": {
                     "base_produced_p1": "Compensation of microinverter fault to reset 0 after around 24xkWh. This is for Port 1",
-                    "base_produced_p2": "Compensation overflow fault around 240-250kWh. Will be added to the base produced value to prevent this. This is for Port 2",
+                    "base_produced_p2": "Compensation overflow fault around 240-540kWh. Will be added to the base produced value to prevent this. This is for Port 2",
                     "port": "The integration will default to 8050",
                     "update_interval": "The interval in seconds between updates. Default is 15 seconds.",
                     "use_api_v2": "Whether to use API v2, which is supported by newer microinverter firmware versions (v1.9.0 and later)."
@@ -37,7 +37,7 @@
                 },
                 "data_description": {
                     "base_produced_p1": "Compensation of microinverter fault to reset 0 after around 24xkWh. This is for Port 1",
-                    "base_produced_p2": "Compensation overflow fault around 240-250kWh. Will be added to the base produced value to prevent this. This is for Port 2",
+                    "base_produced_p2": "Compensation overflow fault around 240-540kWh. Will be added to the base produced value to prevent this. This is for Port 2",
                     "port": "The integration will default to 8050, if not set, which should be suitable for most installs",
                     "update_interval": "The interval in seconds between updates. Default is 15 seconds. Setting this to a lower value may cause increased load on the microinverter and your network.",
                     "use_api_v2": "Whether to use API v2, which is supported by newer microinverter firmware versions (v1.9.0 and later). If your microinverter supports API v2, it is recommended to enable this option."

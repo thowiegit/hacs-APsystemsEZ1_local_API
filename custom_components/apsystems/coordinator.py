@@ -210,20 +210,29 @@ class ApSystemsDataCoordinator(DataUpdateCoordinator[ApSystemsSensorData]):
 
     async def _async_setup(self) -> None:
         retry: int = 5
+        device_info = None
         while retry > 0:
             try:
                 device_info = await self.api.get_device_info()
-                retry = 0  # reset retry counter on success
-
+                retry = 0  # reset retry counter on success to exit loop
             except:
+                retry -= 1
+                _LOGGER.debug("Exception while fetching device info. Retries left: %d", retry)
                 if retry <= 0:
-                    raise UpdateFailed from None
+                   raise UpdateFailed from None  # we cannot start if device is unavailable, therefore stop init (HA will retry later)
                 await asyncio.sleep(2)  # Add a short delay before retrying
 
-        self.api.max_power = device_info.maxPower
-        self.api.min_power = device_info.minPower
-        self.device_version = device_info.devVer
-        self.battery_system = device_info.isBatterySystem
+        # we default to known values, will be overwritten, when device is available.
+        # if device was not available, at least we prevent crashes...
+        self.device_version = None
+        self.battery_system = False
+        self.api.max_power = 800
+        self.api.min_power = 30
+        if device_info:
+            self.api.max_power = device_info.maxPower
+            self.api.min_power = device_info.minPower
+            self.device_version = device_info.devVer
+            self.battery_system = device_info.isBatterySystem
 
         _LOGGER.info("Unique ID: %s", self.config_entry.unique_id)
         _rData = await self._store.async_load()
@@ -280,13 +289,13 @@ class ApSystemsDataCoordinator(DataUpdateCoordinator[ApSystemsSensorData]):
             # 2nd check day values - start with day reset check
             if (self.last_update_day != dt_util.now().day):
                 self.last_update_day = dt_util.now().day
-                if output_data.e1 < (self.last_dayp1 - 0.01): self.last_dayp1 = output_data.e1 # if the day reset by chance happens exactly at the day reset, we need to update the last_dayp1 to prevent false reset value
-                if output_data.e2 < (self.last_dayp2 - 0.01): self.last_dayp2 = output_data.e2
+                if output_data.e1 < (self.last_dayp1 - 0.0001): self.last_dayp1 = output_data.e1 # if the day reset by chance happens exactly at the day reset, we need to update the last_dayp1 to prevent false reset value
+                if output_data.e2 < (self.last_dayp2 - 0.0001): self.last_dayp2 = output_data.e2
                 self.base_day_p1 = -self.last_dayp1  # we need to substract startvalue of daystart to start with a 0 at 00:00
                 self.base_day_p2 = -self.last_dayp2
                 resetDetected = True
             else:
-                if output_data.e1 < (self.last_dayp1 - 0.01):  # we assume a day production is bigger than 0.01 kWh, if not detection will fail. But this is no further issue
+                if output_data.e1 < (self.last_dayp1 - 0.0001):  # we assume a day production is bigger than 0.0001 kWh, if not detection will fail. But this is no further issue
                     # This means that the day production has been reset, so we update the base day produced values
                     self.base_day_p1 += self.last_dayp1
                     self.last_dayp1 = output_data.e1  # reset last_dayp1 to prevent further reset detections due to old value
@@ -296,7 +305,7 @@ class ApSystemsDataCoordinator(DataUpdateCoordinator[ApSystemsSensorData]):
                     output_data.e1 = self.last_dayp1
                 else:
                     self.last_dayp1 = output_data.e1
-                if output_data.e2 < (self.last_dayp2 - 0.01):
+                if output_data.e2 < (self.last_dayp2 - 0.0001):
                     # This means that the day production has been reset, so we update the base day produced values
                     self.base_day_p2 += self.last_dayp2
                     self.last_dayp2 = output_data.e2  # reset last_dayp2 to prevent further reset detections due to old value
@@ -336,12 +345,14 @@ class ApSystemsDataCoordinator(DataUpdateCoordinator[ApSystemsSensorData]):
                 self.old_output_data.v1 = 0
                 self.old_output_data.p1 = 0
                 self.old_output_data.c2 = 0
-                self.old_output_data.v2 = 0
+                self.old_output_data.v2 = 0.123  # just for indication we are in unavailable state
                 self.old_output_data.p2 = 0
-                _LOGGER.debug(
-                    "Inverter returned an error, returning modified old data... (retrycounter: %d)",
-                    self.retrycounter,
-                )
+                self.old_output_data.gf = 50.123  # just for indication we are in unavailable state
+                if (self.last_update_day != dt_util.now().day):
+                    # no --> self.last_update_day = dt_util.now().day   Do not save it, the real correction still needs to be done..
+                    output_data.e1 = 0  # there is the day change during inverter off, so reset day production
+                    output_data.e2 = 0  # However we do not set any last values, because when inverter aways in the morning the actual correction values will be calculated (we cannot know yet)
+                _LOGGER.debug("Inverter returned an error, returning modified old data... (retrycounter: %d)", self.retrycounter)
                 return ApSystemsSensorData(
                     output_data=self.old_output_data, alarm_info=self.old_alarm_info
                 )

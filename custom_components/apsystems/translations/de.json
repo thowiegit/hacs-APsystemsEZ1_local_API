@@ -17,7 +17,7 @@
                     "use_api_v2": "Benutze API v2 (>v1.9.0)"
                 },
                 "data_description": {
-                    "base_produced_p1": "Kompensation des Microinverter Fehlers. Reset auf 0 wird kompensiert nach 240-260kWh. Dies ist für Port 1",
+                    "base_produced_p1": "Kompensation des Microinverter Fehlers. Reset auf 0 wird kompensiert nach 240-540kWh. Dies ist für Port 1",
                     "base_produced_p2": "Kompensation des Microinverter Fehlers für Port 2. Jeder Port wird separat kompensiert. Weitere Overruns kompensiert die Integration für sich alleine.",
                     "port": "Standard port is 8050. Fall nicht gesetzt, wird dies benutzt.",
                     "update_interval": "Update Zykluszeit in Sekunden. Standard sind 15 Sekunden. Zu kleine Werte (<10) belasten das Home Assistand Entries management und belastet den Micro Inverter und Ihr Netzwerk.",
@@ -39,7 +39,7 @@
                     "ip_address": "IP-Adresse des Microinverters",
                     "port": "Standard port is 8050. Fall nicht gesetzt, wird dies benutzt.",
                     "update_interval": "Update Zykluszeit in Sekunden. Standard sind 15 Sekunden. Zu kleine Werte (<10) belasten das Home Assistand Entries management und belastet den Micro Inverter und Ihr Netzwerk.",
-                    "base_produced_p1": "Kompensation des Microinverter Fehlers. Reset auf 0 wird kompensiert nach 240-260kWh. Dies ist für Port 1",
+                    "base_produced_p1": "Kompensation des Microinverter Fehlers. Reset auf 0 wird kompensiert nach 240-540kWh. Dies ist für Port 1",
                     "base_produced_p2": "Kompensation des Microinverter Fehlers für Port 2. Jeder Port wird separat kompensiert. Weitere Overruns kompensiert die Integration für sich alleine.",
                     "use_api_v2": "EZ1-M > v1.9.0 unterstützt eine neue API mit mehr Funktionen. Es wird empfohlen diese zu benutzen."
                 }

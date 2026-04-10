@@ -6,7 +6,7 @@ from aiohttp import ClientConnectorError
 import asyncio
 
 from homeassistant.components.number import NumberDeviceClass, NumberEntity, NumberMode
-from homeassistant.const import UnitOfPower
+from homeassistant.const import STATE_IDLE, STATE_OK, STATE_UNAVAILABLE, UnitOfPower
 from homeassistant.core import DOMAIN, HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import DiscoveryInfoType
@@ -19,7 +19,6 @@ from .coordinator import ApSystemsConfigEntry, ApSystemsData
 from .entity import ApSystemsEntity
 
 import logging
-
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -36,9 +35,9 @@ async def async_setup_entry(
     if (config_entry.runtime_data.coordinator.use_api_v2):
         defaultMaxOutputEntity = ApSystemsDefaultMaxOutputNumber(config_entry.runtime_data)
         config_entry.runtime_data.slow_coordinator.setDefaultMaxOutPutEntity(defaultMaxOutputEntity)
-        add_entities([maxOutputEntity, defaultMaxOutputEntity], True)
+        add_entities([maxOutputEntity, defaultMaxOutputEntity], False)  # we do not want this entity to be updated on start --> will immediately cause raise condition with switch, therefore False, no update before adding
     else:
-        add_entities([maxOutputEntity], True)
+        add_entities([maxOutputEntity], False)
 
 
 class ApSystemsMaxOutputNumber(CoordinatorEntity, ApSystemsEntity, NumberEntity):
@@ -73,6 +72,7 @@ class ApSystemsMaxOutputNumber(CoordinatorEntity, ApSystemsEntity, NumberEntity)
             status = await self._api.get_max_power()
         except:
             _LOGGER.debug("Exception update max power. Retry next cycle...")
+            # self._attr_native_value = 800
             self._attr_available = False
         else:
             self._attr_available = True
@@ -108,7 +108,6 @@ class ApSystemsMaxOutputNumber(CoordinatorEntity, ApSystemsEntity, NumberEntity)
             self._coordinator.currently_running = False  # Reset running state on error
 
 
-
 class ApSystemsDefaultMaxOutputNumber(CoordinatorEntity, ApSystemsEntity, NumberEntity):
     """Base sensor to be used with description."""
 
@@ -142,9 +141,13 @@ class ApSystemsDefaultMaxOutputNumber(CoordinatorEntity, ApSystemsEntity, Number
         except:
             _LOGGER.debug("Exception update default max power. Retry next cycle...")
             self._attr_available = False
+            # self._attr_state = None # self._attr_state = STATE_UNAVAILABLE # self.async_write_ha_state()
+            # for an unknown reason, we cannot set the entity to unavailable anymore. Either HA is broken or something is wrong here, any help welcome...
         else:
-            self._attr_available = True
+            # self._attr_state = STATE_OK
             self._attr_native_value = status
+            self._attr_available = False
+            # self.async_write_ha_state()
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the desired output power."""
@@ -161,11 +164,8 @@ class ApSystemsDefaultMaxOutputNumber(CoordinatorEntity, ApSystemsEntity, Number
                 )
                 counter = 0
                 return
-
         try:
-            self._coordinator.currently_running = (
-                True  # Set coordinator to running state to prevent concurrent updates
-            )
+            self._coordinator.currently_running =  True  # Set coordinator to running state to prevent concurrent updates
             self._attr_native_value = await self._api.set_default_max_power(int(value))
             self._attr_available = True
             self.async_write_ha_state()
