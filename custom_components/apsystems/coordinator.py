@@ -350,8 +350,8 @@ class ApSystemsDataCoordinator(DataUpdateCoordinator[ApSystemsSensorData]):
                 self.old_output_data.gf = 50.123  # just for indication we are in unavailable state
                 if (self.last_update_day != dt_util.now().day):
                     # no --> self.last_update_day = dt_util.now().day   Do not save it, the real correction still needs to be done..
-                    output_data.e1 = 0  # there is the day change during inverter off, so reset day production
-                    output_data.e2 = 0  # However we do not set any last values, because when inverter aways in the morning the actual correction values will be calculated (we cannot know yet)
+                    self.old_output_data.e1 = 0  # there is the day change during inverter off, so reset day production
+                    self.old_output_data.e2 = 0  # However we do not set any last values, because when inverter aways in the morning the actual correction values will be calculated (we cannot know yet)
                 _LOGGER.debug("Inverter returned an error, returning modified old data... (retrycounter: %d)", self.retrycounter)
                 return ApSystemsSensorData(
                     output_data=self.old_output_data, alarm_info=self.old_alarm_info
