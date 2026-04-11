@@ -289,13 +289,13 @@ class ApSystemsDataCoordinator(DataUpdateCoordinator[ApSystemsSensorData]):
             # 2nd check day values - start with day reset check
             if (self.last_update_day != dt_util.now().day):
                 self.last_update_day = dt_util.now().day
-                if output_data.e1 < (self.last_dayp1 - 0.0001): self.last_dayp1 = output_data.e1 # if the day reset by chance happens exactly at the day reset, we need to update the last_dayp1 to prevent false reset value
-                if output_data.e2 < (self.last_dayp2 - 0.0001): self.last_dayp2 = output_data.e2
+                if output_data.e1 < (self.last_dayp1 - 0.0003): self.last_dayp1 = output_data.e1 # if the day reset by chance happens exactly at the day reset, we need to update the last_dayp1 to prevent false reset value
+                if output_data.e2 < (self.last_dayp2 - 0.0003): self.last_dayp2 = output_data.e2
                 self.base_day_p1 = -self.last_dayp1  # we need to substract startvalue of daystart to start with a 0 at 00:00
                 self.base_day_p2 = -self.last_dayp2
                 resetDetected = True
             else:
-                if output_data.e1 < (self.last_dayp1 - 0.0001):  # we assume a day production is bigger than 0.0001 kWh, if not detection will fail. But this is no further issue
+                if output_data.e1 < (self.last_dayp1 - 0.0003):  # we assume a day production is bigger than 0.0003 kWh, if not detection will fail. But this is no further issue
                     # This means that the day production has been reset, so we update the base day produced values
                     self.base_day_p1 += self.last_dayp1
                     self.last_dayp1 = output_data.e1  # reset last_dayp1 to prevent further reset detections due to old value
@@ -305,7 +305,7 @@ class ApSystemsDataCoordinator(DataUpdateCoordinator[ApSystemsSensorData]):
                     output_data.e1 = self.last_dayp1
                 else:
                     self.last_dayp1 = output_data.e1
-                if output_data.e2 < (self.last_dayp2 - 0.0001):
+                if output_data.e2 < (self.last_dayp2 - 0.0003):
                     # This means that the day production has been reset, so we update the base day produced values
                     self.base_day_p2 += self.last_dayp2
                     self.last_dayp2 = output_data.e2  # reset last_dayp2 to prevent further reset detections due to old value

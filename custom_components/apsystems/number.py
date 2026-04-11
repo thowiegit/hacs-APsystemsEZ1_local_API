@@ -62,6 +62,11 @@ class ApSystemsMaxOutputNumber(CoordinatorEntity, ApSystemsEntity, NumberEntity)
         self._attr_native_max_value = data.coordinator.api.max_power
         self._attr_native_min_value = data.coordinator.api.min_power
 
+    @property
+    def available(self) -> bool:
+        """Return if the entity is available."""
+        return self._attr_available or self._coordinator.use_api_v2   # in case of api2 we keep this number active, since we store the value internally
+
     async def async_update(self) -> None:
         """Set the state with the value fetched from the inverter."""
 
@@ -130,6 +135,11 @@ class ApSystemsDefaultMaxOutputNumber(CoordinatorEntity, ApSystemsEntity, Number
         self._attr_native_max_value = data.coordinator.api.max_power
         self._attr_native_min_value = data.coordinator.api.min_power
 
+    @property
+    def available(self) -> bool:
+        """Return if the entity is available."""
+        return self._attr_available
+
     async def async_update(self) -> None:
         """Set the state with the value fetched from the inverter."""
 
@@ -141,13 +151,9 @@ class ApSystemsDefaultMaxOutputNumber(CoordinatorEntity, ApSystemsEntity, Number
         except:
             _LOGGER.debug("Exception update default max power. Retry next cycle...")
             self._attr_available = False
-            # self._attr_state = None # self._attr_state = STATE_UNAVAILABLE # self.async_write_ha_state()
-            # for an unknown reason, we cannot set the entity to unavailable anymore. Either HA is broken or something is wrong here, any help welcome...
         else:
-            # self._attr_state = STATE_OK
             self._attr_native_value = status
-            self._attr_available = False
-            # self.async_write_ha_state()
+            self._attr_available = True
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the desired output power."""

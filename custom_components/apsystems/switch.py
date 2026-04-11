@@ -19,7 +19,9 @@ from .coordinator import ApSystemsConfigEntry, ApSystemsData
 from .entity import ApSystemsEntity
 
 import logging
+
 _LOGGER = logging.getLogger(__name__)
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -41,17 +43,18 @@ class ApSystemsInverterSwitch(CoordinatorEntity, ApSystemsEntity, SwitchEntity):
 
     def __init__(self, data: ApSystemsData) -> None:
         """Initialize the switch."""
-        CoordinatorEntity.__init__(self,
-            coordinator=data.slow_coordinator
-        )
-        ApSystemsEntity.__init__(self,
-            data=data
-        )
+        CoordinatorEntity.__init__(self, coordinator=data.slow_coordinator)
+        ApSystemsEntity.__init__(self, data=data)
         self._api = data.coordinator.api
         self._coordinator = data.coordinator
         self._attr_unique_id = f"{data.device_id}_inverter_status"
         if data.coordinator.battery_system:
             self._attr_available = False
+
+    @property
+    def available(self) -> bool:
+        """Return if the entity is available."""
+        return self._attr_available
 
     async def async_update(self) -> None:
         """Update switch status and availability."""
@@ -71,15 +74,21 @@ class ApSystemsInverterSwitch(CoordinatorEntity, ApSystemsEntity, SwitchEntity):
         """Turn the switch on."""
         counter: int = 0
         while self._coordinator.currently_running:
-            await asyncio.sleep(1)  # Locking for poor people, but better than nothing...
+            await asyncio.sleep(
+                1
+            )  # Locking for poor people, but better than nothing...
             counter += 1
             if counter > 20:  # After 20 seconds of waiting, give up and raise an error
-                _LOGGER.warning("Timeout while waiting for coordinator to be free. Aborting setting power on.")
+                _LOGGER.warning(
+                    "Timeout while waiting for coordinator to be free. Aborting setting power on."
+                )
                 counter = 0
                 return
 
         try:
-            self._coordinator.currently_running = True  # Set coordinator to running state to prevent concurrent updates
+            self._coordinator.currently_running = (
+                True  # Set coordinator to running state to prevent concurrent updates
+            )
             await self._api.set_device_power_status(True)
             self._attr_available = True
             self._attr_is_on = True
@@ -94,15 +103,21 @@ class ApSystemsInverterSwitch(CoordinatorEntity, ApSystemsEntity, SwitchEntity):
 
         counter: int = 0
         while self._coordinator.currently_running:
-            await asyncio.sleep(1)  # Locking for poor people, but better than nothing...
+            await asyncio.sleep(
+                1
+            )  # Locking for poor people, but better than nothing...
             counter += 1
             if counter > 20:  # After 20 seconds of waiting, give up and raise an error
-                _LOGGER.warning("Timeout while waiting for coordinator to be free. Aborting setting power off.")
+                _LOGGER.warning(
+                    "Timeout while waiting for coordinator to be free. Aborting setting power off."
+                )
                 counter = 0
                 return
 
         try:
-            self._coordinator.currently_running = True  # Set coordinator to running state to prevent concurrent updates
+            self._coordinator.currently_running = (
+                True  # Set coordinator to running state to prevent concurrent updates
+            )
             await self._api.set_device_power_status(False)
             self._attr_available = True
             self._attr_is_on = False
