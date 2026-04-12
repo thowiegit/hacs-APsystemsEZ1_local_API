@@ -347,7 +347,7 @@ class ApSystemsDataCoordinator(DataUpdateCoordinator[ApSystemsSensorData]):
                 self.old_output_data.c2 = 0
                 self.old_output_data.v2 = 0.123  # just for indication we are in unavailable state
                 self.old_output_data.p2 = 0
-                self.old_output_data.gf = 50.123  # just for indication we are in unavailable state
+                self.old_output_data.gf = 50.0123  # just for indication we are in unavailable state
                 if (self.last_update_day != dt_util.now().day):
                     # no --> self.last_update_day = dt_util.now().day   Do not save it, the real correction still needs to be done..
                     self.old_output_data.e1 = 0  # there is the day change during inverter off, so reset day production
