@@ -1,5 +1,5 @@
 # hacs-APsystemsEZ1_local
-Modification of popular EZ1 Microinverter to fix a few flaws, APsystems seems not to do
+Modification of popular EZ1 Microinverter to fix a few flaws, APsystems seems not to do.
 Keywords: Home Assistant HA - APsystem EZ1 EZ1-M - Microinverter - Microwechselrichter
 
 > [!IMPORTANT]
@@ -31,7 +31,7 @@ Platform | Beschreibung
 ### Was ist der Unterschied dieser Integration zur Sonnenladen Integration, die nativ in HA Core enthalten ist.
 
 1. Über die Zeit haben sich einige Problemchen mit der ursprünglichen Integration angesammelt, die wohl nur sehr stückweise angegangen werden.
-2. Die WLAN-API des EZ1-M Wechselrichters ist nicht immer sehr stabil. Oft werden Logs mit Fehlermeldungen überschüttet. Diese Integration minimiert die Log-Einträge
+2. Die WLAN-API des EZ1-M Wechselrichters ist nicht immer sehr stabil. Oft werden Logs mit Fehlermeldungen überschüttet. Diese Integration minimiert die Log-Einträge.
 3. Ein sehr ärgerlicher Überlauf in den Energiezählern für Port 1 und Port 2 (P1 und P2) sorgt für ein regelmäßiges Durcheinander im HA Energie-Dashboard. Diese Integration ermöglicht bei der Konfiguration eine Eingabe eines Energieoffsets für bisher stattgefundene Overruns. Wenn nichts eingegeben wird, wird kein Offset hinzugerechnet.
 4. Detektiert selbstständig weitere Overruns (passiert immer so um die 540kWh) und errechnet dann einen neuen Offset, der auch Persistent in HA gespeichert wird. Dieser Offset wird an die Seriennummer des Wechselrichters verbunden, so dass auch mehrere Wechelrichter unterstützt werden können.
 5. Auch nach einem Neustart bleibt der Offset erhalten und man hat keine Rücksprünge mehr und HA errechnet den tatsächlichen erzeugten Energiewert, obwohl der WR wieder bei 0 zum zählen beginnt.
@@ -65,7 +65,7 @@ Sie müssen jedoch wie oben beschrieben Home Assistant einmal neu starten.
 Nun können wir unseren Wechselrichter hinzufügen mit dem Konfigurations-Dialog:
 
 1. In der HA GUI gehen Sie zu "Einstellungen" -> "Geräte & Dienste". Unten rechts klicken Sie auf "Integration hinzufügen". Dann suchen Sie nach "APsystems Local API" (nicht die APSystems nehmen). Oder benutzen Sie einfach den Link oben.
-2. Gehen Sie durch den Konfig-Dialog, anschließend ist Ihr Wechselrichter in Home Assistant eingerichtet.
+2. Gehen Sie durch den Konfig-Dialog (weitere Infos siehe unten Konfiguration mit dem Config-Flow), anschließend ist Ihr Wechselrichter in Home Assistant eingerichtet.
 
 ### Manuelle Installation
 
@@ -80,6 +80,7 @@ Erzeugen Sie ein Unterverzeichnis in homeassistant/custom_components
 2. Die Port-Nummer sollte 8050 sein und ist schon vorausgefüllt, einfach so lassen.
 3. Update-Intervall in Sekunden. Je kleiner der Werte umso öfters werden die Werte aktualisiert. 15 Sekunden sind standard. Weniger wie 5 Sekunden werden nicht empfohlen, weil dies die Integration und HA zu sehr stresst. Auch Ihr Netzwerk und der WR leiden unter zu häufigen Zugriffen.
 4. Nun können Sie Basis Werte für Port 1 (P1) und Port 2 eingeben. Sie haben hierfür zwei Eingabefelder. Wenn Sie die Werte leer lassen, wird die Integration versuchen, bereits früher eingegebene Werte zu finden und diese zu benutzen. Wenn Sie noch nie Werte eingegeben haben, wird der Basis Wert 0 für P1 und P2 angenommen. Diese Basiswerte werden zu den Total Energiewerten von P1 und P2 addiert. Der Wechselrichter hat intern keinen Gesamtspeicher für beide Ports, sondern er hat nur getrennte Register für die jeweiligen Ports. Deshalb müssen Sie die Offsets auch getrennt eingeben. Wenn Sie das nicht interessiert, können Sie das Offset auch einfach auf P1 eingeben und P2 leer lassen. Die Summe wird dies nicht verändern. Zukünftige Overflows erhöhen intern automatisch die Basis. Nur wenn etwas furchtbar schief laufen sollte, können Sie den Konfig-Flow wieder aktivieren, und die Werte ggf. korrigieren.
+5. Die Option mit der API_V2 erweitert die Anzahl der generierten Sensoren (Spannungs, Strom, Netzfrequenz und Temperatur Werte), und erlaubt den Zugang zum persistent im Flash gespeicherten Maximalwert. Ab Firmwareversion 1.9.0 sollten Sie die API_V2 ohne Probleme benutzen können, für ältere Firmwareversionen, müssen Sie evtl. die API_V2 Option abwählen. Die neueren Firmwareversionen funktionieren auch ohne Anwahl der API_V2.
 
 **Fertig! Viel Freude mit der verbesserten Integration.**
 
