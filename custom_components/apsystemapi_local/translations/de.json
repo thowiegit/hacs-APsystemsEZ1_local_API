@@ -63,7 +63,7 @@
         },
         "number": {
             "default_max_output": {
-                "name": "Pers. max. Leistung"
+                "name": "Flashmemory max. Leistung"
             },
             "max_output": {
                 "name": "Maximal Leistung"
