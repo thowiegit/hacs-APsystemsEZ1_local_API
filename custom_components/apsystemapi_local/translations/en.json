@@ -62,7 +62,7 @@
         },
         "number": {
             "default_max_output": {
-                "name": "Saved max output"
+                "name": "Flash memory max output"
             },
             "max_output": {
                 "name": "Max output"
