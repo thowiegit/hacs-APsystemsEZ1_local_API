@@ -20,7 +20,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN, LOGGER, BASE_PRODUCED_P1, BASE_PRODUCED_P2, DAILY_DEBOUNCE_P1, DAILY_DEBOUNCE_P2
+from .const import DAILY_DEBOUNCE_DAY, DAILY_DEBOUNCE_LAST_P1, DAILY_DEBOUNCE_LAST_P2, DOMAIN, LOGGER, BASE_PRODUCED_P1, BASE_PRODUCED_P2, DAILY_DEBOUNCE_P1, DAILY_DEBOUNCE_P2
 
 
 import logging
@@ -31,7 +31,6 @@ _LOGGER = logging.getLogger(__name__)
 @dataclass
 class ApSystemsSensorData:
     """Representing different Apsystems sensor data."""
-
     output_data: ReturnDetailedOutputData
     alarm_info: ReturnAlarmInfo
 
@@ -39,7 +38,6 @@ class ApSystemsSensorData:
 @dataclass
 class ApSystemsData:
     """Store runtime data."""
-
     coordinator: ApSystemsDataCoordinator
     device_id: str
     slow_coordinator: APSystemsSlowUpdateCoordinator
@@ -132,9 +130,7 @@ class APSystemsSlowUpdateCoordinator(DataUpdateCoordinator):
 
         counter: int = 0
         while self._coordinator.currently_running:
-            await asyncio.sleep(
-                0.7
-            )  # Locking for poor people, but better than nothing...
+            await asyncio.sleep(0.7)  # Locking for poor people, but better than nothing...
             counter += 1  # usually we could stop updating, however maxout is rearly updated, therefore give it a little retry ..
             if counter > 4:  # After 2.8 seconds of waiting, give up
                 _LOGGER.debug("Update already running, skipping slow data...")
@@ -194,7 +190,7 @@ class ApSystemsDataCoordinator(DataUpdateCoordinator[ApSystemsSensorData]):
         self.last_tp2: float = 0
         self.last_dayp1: float = 0
         self.last_dayp2: float = 0
-        self.last_update_day = 0
+        self.last_update_day: int = 0
         self.retrycounter: int = 0
         # from info: Store is now a Generic class: self._store = Store[dict[str, int]](hass, STORAGE_VERSION, STORAGE_KEY)
         self._store = Store[dict[str, float]](self.hass, 1, f"{DOMAIN}_storage_{self.config_entry.unique_id}")
@@ -242,9 +238,11 @@ class ApSystemsDataCoordinator(DataUpdateCoordinator[ApSystemsSensorData]):
             self.base_produced_p2 = _rData.get(BASE_PRODUCED_P2, self.base_produced_p2)
             self.base_day_p1 = _rData.get(DAILY_DEBOUNCE_P1, 0)
             self.base_day_p2 = _rData.get(DAILY_DEBOUNCE_P2, 0)
-            _LOGGER.info("Loaded data from storage: %s, p1: %f, p2: %f, day_p1: %f, day_p2: %f",
-                _rData, self.base_produced_p1, self.base_produced_p2, self.base_day_p1, self.base_day_p2)
-        self.last_update_day = dt_util.now().day
+            self.last_dayp1 = _rData.get(DAILY_DEBOUNCE_LAST_P1, 0)
+            self.last_dayp2 = _rData.get(DAILY_DEBOUNCE_LAST_P2, 0)
+            self.last_update_day = _rData.get(DAILY_DEBOUNCE_DAY, dt_util.now().day)  # if no day stored, we assume today --> no correction
+            _LOGGER.info("Loaded data from storage: %s, p1: %f, p2: %f, day_p1: %f, day_p2: %f, last_day_p1: %f, last_day_p2: %f, day: %d",
+                _rData, self.base_produced_p1, self.base_produced_p2, self.base_day_p1, self.base_day_p2, self.last_dayp1, self.last_dayp2, self.last_update_day)
 
 
     async def _async_update_data(self) -> ApSystemsSensorData:
@@ -322,6 +320,9 @@ class ApSystemsDataCoordinator(DataUpdateCoordinator[ApSystemsSensorData]):
                     BASE_PRODUCED_P2: self.base_produced_p2,
                     DAILY_DEBOUNCE_P1: self.base_day_p1,
                     DAILY_DEBOUNCE_P2: self.base_day_p2,
+                    DAILY_DEBOUNCE_LAST_P1: self.last_dayp1,
+                    DAILY_DEBOUNCE_LAST_P2: self.last_dayp2,
+                    DAILY_DEBOUNCE_DAY: self.last_update_day,
                 }
                 await self._store.async_save(_sData)
 
@@ -353,26 +354,14 @@ class ApSystemsDataCoordinator(DataUpdateCoordinator[ApSystemsSensorData]):
                     self.old_output_data.e1 = 0  # there is the day change during inverter off, so reset day production
                     self.old_output_data.e2 = 0  # However we do not set any last values, because when inverter aways in the morning the actual correction values will be calculated (we cannot know yet)
                 _LOGGER.debug("Inverter returned an error, returning modified old data... (retrycounter: %d)", self.retrycounter)
-                return ApSystemsSensorData(
-                    output_data=self.old_output_data, alarm_info=self.old_alarm_info
-                )
+                return ApSystemsSensorData(output_data=self.old_output_data, alarm_info=self.old_alarm_info)
             elif self.retrycounter > 5:
-                _LOGGER.debug(
-                    "Inverter returned an error, raising exception... (retrycounter: %d)",
-                    self.retrycounter,
-                )
-                raise UpdateFailed(
-                    translation_domain=DOMAIN, translation_key="inverter_error"
-                ) from None
+                _LOGGER.debug("Inverter returned an error, raising exception... (retrycounter: %d)", self.retrycounter)
+                raise UpdateFailed(translation_domain=DOMAIN, translation_key="inverter_error") from None
             else:
                 # Otherwise we return old data
-                _LOGGER.debug(
-                    "Inverter returned an error, returning old data... (retrycounter: %d)",
-                    self.retrycounter,
-                )
-                return ApSystemsSensorData(
-                    output_data=self.old_output_data, alarm_info=self.old_alarm_info
-                )
+                _LOGGER.debug("Inverter returned an error, returning old data... (retrycounter: %d)", self.retrycounter)
+                return ApSystemsSensorData(output_data=self.old_output_data, alarm_info=self.old_alarm_info)
         finally:
             self.currently_running = False
 
