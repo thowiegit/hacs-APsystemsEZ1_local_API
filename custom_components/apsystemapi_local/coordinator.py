@@ -184,6 +184,8 @@ class ApSystemsDataCoordinator(DataUpdateCoordinator[ApSystemsSensorData]):
         self.api = api
         self.base_produced_p1: float = base_produced_p1
         self.base_produced_p2: float = base_produced_p2
+        self.old_base_produced_p1: float = base_produced_p1
+        self.old_base_produced_p2: float = base_produced_p2
         self.base_day_p1: float = 0
         self.base_day_p2: float = 0
         self.last_tp1: float = 0
@@ -236,6 +238,8 @@ class ApSystemsDataCoordinator(DataUpdateCoordinator[ApSystemsSensorData]):
             # if there is stored data use it, otherwise use configured ones from config flow, is 0 if not provided
             self.base_produced_p1 = _rData.get(BASE_PRODUCED_P1, self.base_produced_p1)
             self.base_produced_p2 = _rData.get(BASE_PRODUCED_P2, self.base_produced_p2)
+            self.old_base_produced_p1 = self.base_produced_p1
+            self.old_base_produced_p2 = self.base_produced_p2
             self.base_day_p1 = _rData.get(DAILY_DEBOUNCE_P1, 0)
             self.base_day_p2 = _rData.get(DAILY_DEBOUNCE_P2, 0)
             self.last_dayp1 = _rData.get(DAILY_DEBOUNCE_LAST_P1, 0)
@@ -263,21 +267,56 @@ class ApSystemsDataCoordinator(DataUpdateCoordinator[ApSystemsSensorData]):
             self.updateCounter += 1
             resetDetected: bool = False
             # 1st check total values
-            if output_data.te1 < (self.last_tp1 - 100):
+            if (output_data.te1 < (self.last_tp1 - 100)) and (output_data.te1 > 0.0003):
                 # This means that the inverter has been reset, so we update the base produced values
+                if self.old_base_produced_p1 != self.base_produced_p1:
+                    self.old_base_produced_p1 = self.base_produced_p1  # update old base produced p1 if not already the same (might happen if two updates without reboot happens)
                 self.base_produced_p1 += self.last_tp1
                 self.last_tp1 = output_data.te1  # reset last_tp1 to prevent further reset detections due to old value
                 resetDetected = True
+                _LOGGER.info("Reset detected for total port 1. Base p1 updated from %f to: %f", self.old_base_produced_p1, self.base_produced_p1)
+            elif (output_data.te1 > (self.last_tp1 + 100)) and (self.last_tp1 > 0.0003):
+                # This means we detected an overrun, but it was not true and we just got a wrong value in between --> we need to restore old offset!!
+                # This should not happen, but have been seen in some crazy cases...
+                if self.old_base_produced_p1 == self.base_produced_p1:
+                    _LOGGER.critical("Overrun restore for P1 detected, but no saved base value found! This should never happen, create an issue and report history. Base P1 restored from %f to ...", self.base_produced_p1)
+                    if (self.base_produced_p1>(output_data.te1-self.last_tp1)):
+                        self.base_produced_p1 -= (output_data.te1-self.last_tp1)
+                    self.old_base_produced_p1 = self.base_produced_p1  # update old_base_produced_p1 to prevent further detection.
+                else:
+                    _LOGGER.warning("Error in overrun detection. Restore needed for total port 1. This should not happen! Base p1 restored from %f to ...", self.base_produced_p1)
+                    self.base_produced_p1 = self.old_base_produced_p1
+                self.last_tp1 = output_data.te1  # reset last_tp1 to prevent further reset detections due to old value
+                resetDetected = True
+                _LOGGER.warning(" .. Base p1 restored to: %f", self.base_produced_p1)
             elif output_data.te1 < self.last_tp1:
                 # inverter rounding issue, ignore this value and use old one
                 output_data.te1 = self.last_tp1
             else:
                 self.last_tp1 = output_data.te1
-            if output_data.te2 < (self.last_tp2 - 100):
+
+            if (output_data.te2 < (self.last_tp2 - 100)) and (output_data.te2 > 0.0003):
                 # This means that the inverter has been reset, so we update the base produced values
+                if self.old_base_produced_p2 != self.base_produced_p2:
+                    self.old_base_produced_p2 = self.base_produced_p2  # update old base produced p2 if not already the same (might happen if two updates without reboot happens)
                 self.base_produced_p2 += self.last_tp2
                 self.last_tp2 = output_data.te2  # reset last_tp2 to prevent further reset detections due to old value
                 resetDetected = True
+                _LOGGER.info("Reset detected for total port 2. Base p2 updated from %f to: %f", self.old_base_produced_p2, self.base_produced_p2)
+            elif (output_data.te2 > (self.last_tp2 + 100)) and (self.last_tp2 > 0.0003):
+                # This means we detected an overrun, but it was not true and we just got a wrong value in between --> we need to restore old offset!!
+                # This should not happen, but have been seen in some crazy cases...
+                if self.old_base_produced_p2 == self.base_produced_p2:
+                    _LOGGER.critical("Overrun restore for P2 detected, but no saved base value found! This should never happen, create an issue and report history. Base P2 restored from %f to ...", self.base_produced_p2)
+                    if (self.base_produced_p2>(output_data.te2-self.last_tp2)):
+                        self.base_produced_p2 -= (output_data.te2-self.last_tp2)
+                    self.old_base_produced_p2 = self.base_produced_p2  # update old_base_produced_p2 to prevent further detection.
+                else:
+                    _LOGGER.warning("Error in overrun detection. Restore needed for total port 2. This should not happen! Base p2 restored from %f to ...", self.base_produced_p2)
+                    self.base_produced_p2 = self.old_base_produced_p2
+                self.last_tp2 = output_data.te2  # reset last_tp2 to prevent further reset detections due to old value
+                resetDetected = True
+                _LOGGER.warning(" .. Base p2 restored to: %f", self.base_produced_p2)
             elif output_data.te2 < self.last_tp2:
                 # inverter rounding issue, ignore this value and use old one
                 output_data.te2 = self.last_tp2
@@ -325,6 +364,8 @@ class ApSystemsDataCoordinator(DataUpdateCoordinator[ApSystemsSensorData]):
                     DAILY_DEBOUNCE_DAY: self.last_update_day,
                 }
                 await self._store.async_save(_sData)
+                _LOGGER.info("Reset detected, saved data to storage: %s, p1: %f, p2: %f, day_p1: %f, day_p2: %f, last_day_p1: %f, last_day_p2: %f, day: %d",
+                    _sData, self.base_produced_p1, self.base_produced_p2, self.base_day_p1, self.base_day_p2, self.last_dayp1, self.last_dayp2, self.last_update_day)
 
             output_data.te1 += self.base_produced_p1
             output_data.te2 += self.base_produced_p2
