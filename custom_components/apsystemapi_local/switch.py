@@ -65,7 +65,7 @@ class ApSystemsInverterSwitch(CoordinatorEntity, ApSystemsEntity, SwitchEntity):
             status = await self._api.get_device_power_status()
         except:
             self._attr_available = False
-            _LOGGER.info("Exception while updating switch status. Retry next cycle...")
+            _LOGGER.debug("Exception while updating switch status. Retry next cycle...")
         else:
             self._attr_available = True
             self._attr_is_on = status
