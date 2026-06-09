@@ -65,7 +65,7 @@ class ApSystemsInverterSwitch(CoordinatorEntity, ApSystemsEntity, SwitchEntity):
             status = await self._api.get_device_power_status()
         except:
             self._attr_available = False
-            _LOGGER.info("Exception while updating switch status. Retry next cycle...")
+            _LOGGER.debug("Exception while updating switch status. Retry next cycle...")
         else:
             self._attr_available = True
             self._attr_is_on = status
@@ -74,21 +74,15 @@ class ApSystemsInverterSwitch(CoordinatorEntity, ApSystemsEntity, SwitchEntity):
         """Turn the switch on."""
         counter: int = 0
         while self._coordinator.currently_running:
-            await asyncio.sleep(
-                1
-            )  # Locking for poor people, but better than nothing...
+            await asyncio.sleep(1)  # Locking for poor people, but better than nothing...
             counter += 1
             if counter > 20:  # After 20 seconds of waiting, give up and raise an error
-                _LOGGER.warning(
-                    "Timeout while waiting for coordinator to be free. Aborting setting power on."
-                )
+                _LOGGER.warning("Timeout while waiting for coordinator to be free. Aborting setting power on.")
                 counter = 0
                 return
 
         try:
-            self._coordinator.currently_running = (
-                True  # Set coordinator to running state to prevent concurrent updates
-            )
+            self._coordinator.currently_running = True  # Set coordinator to running state to prevent concurrent updates
             await self._api.set_device_power_status(True)
             self._attr_available = True
             self._attr_is_on = True
@@ -103,21 +97,15 @@ class ApSystemsInverterSwitch(CoordinatorEntity, ApSystemsEntity, SwitchEntity):
 
         counter: int = 0
         while self._coordinator.currently_running:
-            await asyncio.sleep(
-                1
-            )  # Locking for poor people, but better than nothing...
+            await asyncio.sleep(1)  # Locking for poor people, but better than nothing...
             counter += 1
             if counter > 20:  # After 20 seconds of waiting, give up and raise an error
-                _LOGGER.warning(
-                    "Timeout while waiting for coordinator to be free. Aborting setting power off."
-                )
+                _LOGGER.warning("Timeout while waiting for coordinator to be free. Aborting setting power off.")
                 counter = 0
                 return
 
         try:
-            self._coordinator.currently_running = (
-                True  # Set coordinator to running state to prevent concurrent updates
-            )
+            self._coordinator.currently_running = True  # Set coordinator to running state to prevent concurrent updates
             await self._api.set_device_power_status(False)
             self._attr_available = True
             self._attr_is_on = False
