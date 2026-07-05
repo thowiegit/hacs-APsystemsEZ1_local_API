@@ -22,55 +22,154 @@ jobs:
 
       - name: Add Upstream and Fetch
         run: |
-          git remote add upstream https://github.com/AndyNew2/hacs-APsystemsEZ1_local.git
-          git fetch upstream
+          set -euo pipefail
+          if git remote get-url upstream >/dev/null 2>&1; then
+            git remote set-url upstream https://github.com/AndyNew2/hacs-APsystemsEZ1_local.git
+          else
+            git remote add upstream https://github.com/AndyNew2/hacs-APsystemsEZ1_local.git
+          fi
+          git fetch upstream main
 
       - name: Merge Upstream Changes
         run: |
+          set -euo pipefail
           git merge upstream/main --allow-unrelated-histories -X theirs --no-commit || true
+          if [ -n "$(git diff --name-only --diff-filter=U)" ]; then
+            echo "Nicht automatisch auflösbare Merge-Konflikte:"
+            git diff --name-only --diff-filter=U
+            exit 1
+          fi
 
       - name: Apply Custom Patches
         run: |
-          # --- 1. CODE & STRUKTUR (manifest.json etc.) ---
+          set -euo pipefail
+
+          # --- 1. CODE & STRUKTUR (Domain der Core-Integration überdecken) ---
           if [ -d "custom_components/apsystemsapi_local" ]; then
+            rm -rf custom_components/apsystems
             mv custom_components/apsystemsapi_local custom_components/apsystems
           fi
 
-          # Patch manifest.json nur, wenn thowiegit noch nicht drin steht
-          if ! grep -q "@thowiegit" custom_components/apsystems/manifest.json; then
-            sed -i 's/apsystemsapi_local/apsystems/g' custom_components/apsystems/manifest.json
-            sed -i 's/"name": "APsystems Local API"/"name": "APsystems"/g' custom_components/apsystems/manifest.json
-            sed -i 's/"@AndyNew2", "@mawoka-myblock", "@SonnenladenGmbH"/"@thowiegit", "@AndyNew2", "@mawoka-myblock", "@SonnenladenGmbH"/g' custom_components/apsystems/manifest.json
+          if [ -f "custom_components/apsystems/manifest.json" ]; then
+            python3 - <<'PY'
+          from pathlib import Path
+
+          manifest = Path("custom_components/apsystems/manifest.json")
+          text = manifest.read_text(encoding="utf-8")
+          text = text.replace("apsystemsapi_local", "apsystems")
+          text = text.replace('"name": "APsystems Local API"', '"name": "APsystems"')
+          text = text.replace(
+              '"@AndyNew2", "@mawoka-myblock", "@SonnenladenGmbH"',
+              '"@thowiegit", "@AndyNew2", "@mawoka-myblock", "@SonnenladenGmbH"',
+          )
+          manifest.write_text(text, encoding="utf-8")
+          PY
           fi
 
-          # --- 2. README.md SCHUTZ-LOGIK ---
-          # Wenn das Upstream-Badge existiert, wurde die Datei bereits erfolgreich gepatcht.
-          # In diesem Fall überspringen wir alle Änderungen an der README.md komplett.
-          if grep -q "\[upstream-shield\]" README.md; then
-            echo "README.md bereits gepatcht (Upstream-Badge gefunden). Überspringe README-Patches."
-          else
-            echo "README.md wird gepatcht..."
-            
-            # Alle Ersetzungen in einem Rutsch
-            sed -i 's/apsystemsapi_local/apsystems/g' README.md
-            sed -i 's/AndyNew2\/hacs-APsystemsEZ1_local/thowiegit\/hacs-APsystemsEZ1_local_API/g' README.md
-            sed -i 's/APsystems EZ1 local Integration/APsystems EZ1 local API Integration/g' README.md
-            sed -i 's/popular EZ1 Microinverter to fix/popular EZ1 Microinverter Integration to fix/g' README.md
-            
-            # Upstream-Badge am Ende einfügen (Platzhalter + Referenzen)
-            sed -i '0,/\]\[releases\]/ s/\]\[releases\]/&\n[![Upstream Release][upstream-shield]][upstream-repo]/' README.md
-            echo "" >> README.md
-            echo "[upstream-shield]: https://img.shields.io/github/v/release/AndyNew2/hacs-APsystemsEZ1_local?label=upstream%20version&style=for-the-badge" >> README.md
-            echo "[upstream-repo]: https://github.com/AndyNew2/hacs-APsystemsEZ1_local" >> README.md
+          # --- 2. README.md immer idempotent patchen, nicht per Upstream-Badge überspringen ---
+          if [ -f "README.md" ]; then
+            python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path("README.md")
+          text = path.read_text(encoding="utf-8")
+
+          fork_owner = "thowiegit"
+          fork_repo = "hacs-APsystemsEZ1_local_API"
+          fork_full = f"{fork_owner}/{fork_repo}"
+          upstream_owner = "AndyNew2"
+          upstream_repo = "hacs-APsystemsEZ1_local"
+          upstream_full = f"{upstream_owner}/{upstream_repo}"
+
+          # Domain/Folder des Forks: die Core-Domain apsystems soll absichtlich überdeckt werden.
+          text = text.replace("apsystemsapi_local", "apsystems")
+
+          # Titel/Intro des Forks.
+          text = text.replace("# hacs-APsystemsEZ1_local", f"# {fork_repo}")
+          text = text.replace("APsystems EZ1 local Integration", "APsystems EZ1 local API Integration")
+          text = text.replace(
+              "popular EZ1 Microinverter to fix",
+              "popular EZ1 Microinverter Integration to fix",
+          )
+
+          # HACS-Button: sowohl die ursprüngliche Upstream-Variante als auch bereits teilverpatchte Altstände korrigieren.
+          text = re.sub(
+              r"owner=(?:AndyNew2|thowiegit)&repository=hacs-APsystemsEZ1_local(?:_API)?",
+              f"owner={fork_owner}&repository={fork_repo}",
+              text,
+          )
+
+          # Installationsanweisung im Text: Custom Repository muss auf den Fork zeigen.
+          text = re.sub(
+              r"`(?:AndyNew2|thowiegit)/hacs-APsystemsEZ1_local(?:_API)?`",
+              f"`{fork_full}`",
+              text,
+          )
+
+          # Falls der Repo-String ohne Backticks in Fließtext auftaucht, ebenfalls korrigieren,
+          # aber die Upstream-Referenzdefinitionen werden weiter unten bewusst neu gesetzt.
+          text = re.sub(
+              r"(?<!github\.com/)(?:AndyNew2|thowiegit)/hacs-APsystemsEZ1_local(?:_API)?",
+              fork_full,
+              text,
+          )
+
+          # Upstream-Badge in der Badge-Liste sicherstellen, aber nicht duplizieren.
+          upstream_badge = "[![Upstream Release][upstream-shield]][upstream-repo]"
+          if upstream_badge not in text:
+              release_badge = "[![GitHub Release][releases-shield]][releases]"
+              if release_badge in text:
+                  text = text.replace(release_badge, release_badge + "\n" + upstream_badge, 1)
+              else:
+                  text = upstream_badge + "\n" + text
+
+          # Referenzdefinitionen gezielt neu setzen. Damit zeigen Fork-Badges auf den Fork,
+          # während Upstream-Badge/Upstream-Link beim Original bleiben.
+          refs = {
+              "commits-shield": f"https://img.shields.io/github/commit-activity/y/{fork_full}.svg?style=for-the-badge",
+              "commits": f"https://github.com/{fork_full}/commits/main",
+              "license-shield": f"https://img.shields.io/github/license/{fork_full}.svg?style=for-the-badge",
+              "releases-shield": f"https://img.shields.io/github/release/{fork_full}.svg?style=for-the-badge",
+              "releases": f"https://github.com/{fork_full}/releases",
+              "upstream-shield": f"https://img.shields.io/github/v/release/{upstream_full}?label=upstream%20version&style=for-the-badge",
+              "upstream-repo": f"https://github.com/{upstream_full}",
+          }
+
+          ref_names = "|".join(re.escape(name) for name in refs)
+          text = re.sub(rf"\n?\[(?:{ref_names})\]: .*", "", text)
+          text = text.rstrip() + "\n\n" + "\n".join(f"[{name}]: {url}" for name, url in refs.items()) + "\n"
+
+          path.write_text(text, encoding="utf-8")
+          PY
+          fi
+
+      - name: Validate README Patches
+        run: |
+          set -euo pipefail
+
+          if [ -f "README.md" ]; then
+            echo "Installationsrelevante README-Zeilen nach dem Patch:"
+            grep -nE 'hacs_repository|Benutzer Repository|config_flow_start|custom_components|owner=|thowiegit|AndyNew2|apsystemsapi_local' README.md || true
+
+            if grep -nE 'owner=AndyNew2|`AndyNew2/hacs-APsystemsEZ1_local(_API)?`|apsystemsapi_local' README.md; then
+              echo "README.md enthält noch installationsrelevante Alt-Verweise auf Upstream oder die alte Domain."
+              exit 1
+            fi
+
+            grep -q 'owner=thowiegit&repository=hacs-APsystemsEZ1_local_API' README.md
+            grep -q '`thowiegit/hacs-APsystemsEZ1_local_API`' README.md
+            grep -q 'redirect/config_flow_start/?domain=apsystems' README.md
+            grep -q 'Unterverzeichnis mit dem Namen "apsystems"' README.md
           fi
 
       - name: Commit and Push
         run: |
+          set -euo pipefail
           git add .
           if ! git diff-index --quiet HEAD; then
-            git commit -m "Auto-Patch: Guarded sync (README protection active)"
+            git commit -m "Auto-Patch: sync upstream and patch fork install instructions"
             git push origin main
           else
             echo "No changes to commit"
           fi
-
