@@ -1,5 +1,5 @@
-# hacs-APsystemsEZ1_local
-Modification of popular EZ1 Microinverter to fix a few flaws, APsystems seems not to do.
+# hacs-APsystemsEZ1_local_API
+Modification of popular EZ1 Microinverter Integration to fix a few flaws, APsystems seems not to do.
 Keywords: Home Assistant HA - APsystem EZ1 EZ1-M - Microinverter - Microwechselrichter
 
 > [!IMPORTANT]
@@ -47,11 +47,11 @@ Platform | Beschreibung
 
 ### Installation mit HACS Repository (Empfohlen)
 
-[![Öffnen Sie Ihr Home Assistant und gehen Sie in das Repository im Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=AndyNew2&repository=hacs-APsystemsEZ1_local_API&category=integration)
+[![Öffnen Sie Ihr Home Assistant und gehen Sie in das Repository im Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=thowiegit&repository=hacs-APsystemsEZ1_local_API&category=integration)
 
 1. Installieren Sie [HACS](https://hacs.xyz/) und führen Sie das zugehörige Setup aus.
 2. Gehen Sie in HACS und selektieren "Integrations".
-3. Fügen Sie `AndyNew2/hacs-APsystemsEZ1_local` mit der Kathegorie "Integration" als [Benutzer Repository](https://hacs.xyz/docs/faq/custom_repositories/) ein. Oder einfacher, benutzen Sie einfach den Link nach "Installation mit HACS Repository (Empfohlen)".
+3. Fügen Sie `thowiegit/hacs-APsystemsEZ1_local_API` mit der Kathegorie "Integration" als [Benutzer Repository](https://hacs.xyz/docs/faq/custom_repositories/) ein. Oder einfacher, benutzen Sie einfach den Link nach "Installation mit HACS Repository (Empfohlen)".
 Falls möglich gleich den "Download" Button nutzen und die aktuelle Version der Integration herunterladen, sonst verschwindet das neue Repository gleich wieder.
 4. Wählen Sie "APsystems Local API" von der Liste oder beim Dialog oben klicken auf "Download".
 5. Anschließend müssen Sie Home Assistant neu starten, damit die Integration verfügbar wird.
@@ -91,10 +91,11 @@ Erzeugen Sie ein Unterverzeichnis in homeassistant/custom_components
 - Der Persistente (im Flash Speicher) befindliche Maximal-Leistungswert kann in neueren Firmwareversionen nicht mehr häufig geschrieben werden. Dies ist eine Art Schutz, die sehr sinnvoll ist. Leider gibt der Wechelrichter hierzu keine passende Fehlermeldung, wodurch diese Integration nicht unterscheiden kann, warum das Schreiben nicht funktioniert hat. Falls das Schreiben nicht klappt, bitte etwas abwarten (ca. 45 Minuten). Auch wiederholte Versuche zählen als Schreibzugriff, wodurch diese Wartezeit verlängert wird. Also alles in Ruhe lassen und nach der angegebenen Zeit einen Schreibzugriff probieren, dann sollte es auch klappen.
 - Diese Integration nutzt standardmäßig die neue API mit viel mehr Sensorwerten und dem neuen DefaultMaxPower Flash-Speicher. Sollte Ihr Wechelrichter Probleme mit der neuen API haben (weil Sie z.B. noch eine ältere Firmware <1.7.x nutzen), können Sie im Konfigurationsdialog die neue API abschalten. Hierzu einfach den entsprechenden Schalter am Ende des Dialogs abwählen.
 
-[commits-shield]: https://img.shields.io/github/commit-activity/y/AndyNew2/hacs-APsystemsEZ1_local.svg?style=for-the-badge
-[commits]: https://github.com/AndyNew2/hacs-APsystemsEZ1_local/commits/master
 [hacs]: https://github.com/hacs/integration
 [hacsbadge]: https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge
+
+[commits-shield]: https://img.shields.io/github/commit-activity/y/thowiegit/hacs-APsystemsEZ1_local_API.svg?style=for-the-badge
+[commits]: https://github.com/thowiegit/hacs-APsystemsEZ1_local_API/commits/main
 [license-shield]: https://img.shields.io/github/license/thowiegit/hacs-APsystemsEZ1_local_API.svg?style=for-the-badge
 [releases-shield]: https://img.shields.io/github/release/thowiegit/hacs-APsystemsEZ1_local_API.svg?style=for-the-badge
 [releases]: https://github.com/thowiegit/hacs-APsystemsEZ1_local_API/releases
