@@ -1,7 +1,7 @@
 {
   "domain": "apsystems",
   "name": "APsystems",
-  "codeowners": ["@thowiegit", "@thowiegit", "@thowiegit", "@thowiegit", "@thowiegit", "@thowiegit", "@thowiegit", "@thowiegit", "@thowiegit", "@AndyNew2", "@mawoka-myblock", "@SonnenladenGmbH"],
+  "codeowners": ["@thowiegit", "@thowiegit", "@thowiegit", "@thowiegit", "@thowiegit", "@thowiegit", "@thowiegit", "@thowiegit", "@thowiegit", "@thowiegit", "@AndyNew2", "@mawoka-myblock", "@SonnenladenGmbH"],
   "config_flow": true,
   "documentation": "https://www.home-assistant.io/integrations/apsystems",
   "integration_type": "device",
