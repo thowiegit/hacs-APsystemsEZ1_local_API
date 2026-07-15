@@ -1,4 +1,4 @@
-# hacs-APsystemsEZ1_local_API_API_API_API_API_API_API_API_API_API
+# hacs-APsystemsEZ1_local_API_API_API_API_API_API_API_API_API_API_API
 Modification of popular EZ1 Microinverter Integration to fix a few flaws, APsystems seems not to do.
 Keywords: Home Assistant HA - APsystem EZ1 EZ1-M - Microinverter - Microwechselrichter
 
