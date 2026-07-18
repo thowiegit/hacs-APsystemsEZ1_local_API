@@ -67,220 +67,288 @@ jobs:
           from __future__ import annotations
 
           import json
+          import os
           import re
           import shutil
           from pathlib import Path
 
-          import os
 
-          github_repository = os.environ.get("GITHUB_REPOSITORY", "")
-          if "/" not in github_repository:
-              raise SystemExit("GITHUB_REPOSITORY fehlt oder ist ungültig")
+          class ForkPatcher:
+              """Apply the persistent identity changes of this Home Assistant fork."""
 
-          FORK_OWNER, FORK_REPO = github_repository.split("/", 1)
-          FORK_FULL = github_repository
+              TARGET_DOMAIN = "apsystems"
+              TARGET_NAME = "APsystems"
+              FORK_CODEOWNER = "@thowiegit"
 
-          UPSTREAM_OWNER = "AndyNew2"
-          UPSTREAM_REPO = "hacs-APsystemsEZ1_local"
-          UPSTREAM_FULL = f"{UPSTREAM_OWNER}/{UPSTREAM_REPO}"
+              UPSTREAM_OWNER = "AndyNew2"
+              UPSTREAM_REPO = "hacs-APsystemsEZ1_local"
 
-          # -----------------------------------------------------------------
-          # 1. Integrationsverzeichnis auf die Home-Assistant-Core-Domain legen
-          # -----------------------------------------------------------------
-          component_root = Path("custom_components")
-          target_dir = component_root / "apsystems"
-
-          # Upstream verwendet derzeit für das Verzeichnis "apsystemapi_local",
-          # während die Domain "apsystemsapi_local" lautet. Frühere Fassungen
-          # unseres Workflows gingen fälschlich von einem gleichnamigen Verzeichnis
-          # aus. Beide Schreibweisen werden unterstützt, damit auch eine spätere
-          # Korrektur oder Umbenennung im Upstream den Patch nicht sofort bricht.
-          source_candidates = [
-              component_root / "apsystemapi_local",
-              component_root / "apsystemsapi_local",
-          ]
-          source_dirs = [path for path in source_candidates if path.is_dir()]
-
-          if len(source_dirs) > 1:
-              raise SystemExit(
-                  "Mehrere mögliche Upstream-Komponentenverzeichnisse gefunden: "
-                  + ", ".join(str(path) for path in source_dirs)
+              COMPONENT_ROOT = Path("custom_components")
+              TARGET_COMPONENT_DIR = COMPONENT_ROOT / TARGET_DOMAIN
+              UPSTREAM_COMPONENT_DIRS = (
+                  COMPONENT_ROOT / "apsystemapi_local",
+                  COMPONENT_ROOT / "apsystemsapi_local",
               )
 
-          if source_dirs:
-              source_dir = source_dirs[0]
-              if target_dir.exists():
-                  shutil.rmtree(target_dir)
-              source_dir.rename(target_dir)
-          elif not target_dir.is_dir():
-              raise SystemExit(
-                  "Kein Komponentenverzeichnis gefunden; erwartet wurde eines von: "
-                  + ", ".join(str(path) for path in [*source_candidates, target_dir])
-              )
+              README_PATH = Path("README.md")
 
-          # Die Domain steht nicht nur im Manifest, sondern derzeit auch in const.py.
-          # Alle Textdateien der übernommenen Komponente werden daher unabhängig von
-          # ihrer Lage auf die Core-Domain umgeschrieben.
-          for path in target_dir.rglob("*"):
-              if not path.is_file():
-                  continue
-              try:
-                  content = path.read_text(encoding="utf-8")
-              except UnicodeDecodeError:
-                  continue
-              patched = content.replace("apsystemsapi_local", "apsystems")
-              if patched != content:
-                  path.write_text(patched, encoding="utf-8")
+              def __init__(self, github_repository: str) -> None:
+                  if "/" not in github_repository:
+                      raise SystemExit(
+                          "GITHUB_REPOSITORY fehlt oder ist ungültig"
+                      )
 
-          # -----------------------------------------------------------------
-          # 2. manifest.json strukturiert und idempotent ändern
-          # -----------------------------------------------------------------
-          manifest_path = target_dir / "manifest.json"
-          if not manifest_path.is_file():
-              raise SystemExit(f"Fehlende Datei: {manifest_path}")
+                  self.fork_owner, self.fork_repo = github_repository.split(
+                      "/", 1
+                  )
+                  self.fork_full = github_repository
+                  self.upstream_full = (
+                      f"{self.UPSTREAM_OWNER}/{self.UPSTREAM_REPO}"
+                  )
 
-          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-          manifest["domain"] = "apsystems"
-          manifest["name"] = "APsystems"
+              def run(self) -> None:
+                  self.patch_component_directory()
+                  self.patch_component_domain_references()
+                  self.patch_manifest()
+                  self.patch_readme()
 
-          codeowners = manifest.get("codeowners", [])
-          if not isinstance(codeowners, list):
-              raise SystemExit('manifest.json: "codeowners" ist keine Liste')
+              def patch_component_directory(self) -> None:
+                  """Move the current upstream component to the Core domain path."""
+                  source_dirs = [
+                      path for path in self.UPSTREAM_COMPONENT_DIRS if path.is_dir()
+                  ]
 
-          # Duplikate entfernen und thowiegit exakt einmal an die erste Stelle setzen.
-          codeowners = [owner for owner in codeowners if owner != "@thowiegit"]
-          manifest["codeowners"] = ["@thowiegit", *codeowners]
+                  if len(source_dirs) > 1:
+                      raise SystemExit(
+                          "Mehrere mögliche Upstream-Komponentenverzeichnisse "
+                          "gefunden: "
+                          + ", ".join(str(path) for path in source_dirs)
+                      )
 
-          manifest_path.write_text(
-              json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
-              encoding="utf-8",
-          )
+                  if source_dirs:
+                      source_dir = source_dirs[0]
+                      if self.TARGET_COMPONENT_DIR.exists():
+                          shutil.rmtree(self.TARGET_COMPONENT_DIR)
+                      source_dir.rename(self.TARGET_COMPONENT_DIR)
+                  elif not self.TARGET_COMPONENT_DIR.is_dir():
+                      expected = [
+                          *self.UPSTREAM_COMPONENT_DIRS,
+                          self.TARGET_COMPONENT_DIR,
+                      ]
+                      raise SystemExit(
+                          "Kein Komponentenverzeichnis gefunden; erwartet wurde "
+                          "eines von: "
+                          + ", ".join(str(path) for path in expected)
+                      )
 
-          # -----------------------------------------------------------------
-          # 3. README.md bei jedem Lauf vollständig und idempotent patchen
-          # -----------------------------------------------------------------
-          readme_path = Path("README.md")
-          if not readme_path.is_file():
-              raise SystemExit("Fehlende Datei: README.md")
+              def patch_component_domain_references(self) -> None:
+                  """Replace the upstream domain in all UTF-8 component files."""
+                  replacements = {
+                      "apsystemsapi_local": self.TARGET_DOMAIN,
+                  }
 
-          text = readme_path.read_text(encoding="utf-8")
+                  for path in self.TARGET_COMPONENT_DIR.rglob("*"):
+                      if not path.is_file():
+                          continue
 
-          # Nur die komplette erste Markdown-Überschrift ersetzen. Dadurch kann sich
-          # der Repositoryname bei wiederholten Läufen nicht selbst vervielfachen.
-          text, heading_count = re.subn(
-              r"(?m)^#\s+hacs-APsystems(?:EZ1_local(?:_API)*)?\s*$",
-              f"# {FORK_REPO}",
-              text,
-              count=1,
-          )
-          if heading_count == 0:
-              # Auch unbekannte/neu geänderte erste H1 des Upstreams kontrolliert setzen.
-              text, heading_count = re.subn(
-                  r"(?m)^#\s+[^\n]+$",
-                  f"# {FORK_REPO}",
-                  text,
-                  count=1,
-              )
-          if heading_count == 0:
-              text = f"# {FORK_REPO}\n\n{text}"
+                      try:
+                          original = path.read_text(encoding="utf-8")
+                      except UnicodeDecodeError:
+                          continue
 
-          text = text.replace("apsystemsapi_local", "apsystems")
+                      patched = original
+                      for old, new in replacements.items():
+                          patched = patched.replace(old, new)
 
-          # In Home Assistant erscheint dieser Fork absichtlich unter demselben
-          # Integrationsnamen wie die überdeckte Core-Integration. Die exakte
-          # Bezeichnung kann unabhängig von Lage und Anzahl global ersetzt werden,
-          # ohne Repositorynamen oder die Überschrift „EZ1 local API“ zu treffen.
-          text = text.replace("APsystems Local API", "APsystems")
+                      if patched != original:
+                          path.write_text(patched, encoding="utf-8")
 
-          # Dieser Hinweis war nur bei der früher parallel installierten Integration
-          # sinnvoll. Der Fork überdeckt jedoch bewusst die Core-Integration und ist
-          # deshalb genau unter "APsystems" auszuwählen. Schreibweise und Abstände
-          # werden tolerant behandelt, damit kleine Upstream-Änderungen erfasst werden.
-          text = re.sub(
-              r"\s*\(\s*nicht\s+die\s+APsystems\s+nehmen\s*\)",
-              "",
-              text,
-              flags=re.IGNORECASE,
-          )
+              def patch_manifest(self) -> None:
+                  """Patch manifest.json structurally and keep upstream metadata."""
+                  manifest_path = self.TARGET_COMPONENT_DIR / "manifest.json"
+                  if not manifest_path.is_file():
+                      raise SystemExit(f"Fehlende Datei: {manifest_path}")
 
-          text = text.replace(
-              "APsystems EZ1 local Integration",
-              "APsystems EZ1 local API Integration",
-          )
-          text = text.replace(
-              "popular EZ1 Microinverter to fix",
-              "popular EZ1 Microinverter Integration to fix",
-          )
+                  manifest = json.loads(
+                      manifest_path.read_text(encoding="utf-8")
+                  )
+                  manifest["domain"] = self.TARGET_DOMAIN
+                  manifest["name"] = self.TARGET_NAME
 
-          # HACS-Weiterleitungsbutton unabhängig von dessen bisherigem Owner patchen.
-          text = re.sub(
-              r"owner=[^&\s)]+&repository=hacs-APsystemsEZ1_local(?:_API)?",
-              f"owner={FORK_OWNER}&repository={FORK_REPO}",
-              text,
-          )
+                  codeowners = manifest.get("codeowners", [])
+                  if not isinstance(codeowners, list):
+                      raise SystemExit(
+                          'manifest.json: "codeowners" ist keine Liste'
+                      )
 
-          # Installationsanweisung für das benutzerdefinierte HACS-Repository.
-          text = re.sub(
-              r"`(?:[^`/]+/)?hacs-APsystemsEZ1_local(?:_API)?`",
-              f"`{FORK_FULL}`",
-              text,
-          )
+                  # Preserve upstream owners, remove all duplicate fork entries,
+                  # and insert the fork owner exactly once at the front.
+                  cleaned_codeowners: list[str] = []
+                  for owner in codeowners:
+                      if owner == self.FORK_CODEOWNER:
+                          continue
+                      if owner not in cleaned_codeowners:
+                          cleaned_codeowners.append(owner)
 
-          # Fork-Badges verweisen auf den Fork; der separate Upstream-Badge bleibt
-          # absichtlich beim Originalrepository.
-          refs = {
-              "commits-shield": (
-                  "https://img.shields.io/github/commit-activity/y/"
-                  f"{FORK_FULL}.svg?style=for-the-badge"
-              ),
-              "commits": f"https://github.com/{FORK_FULL}/commits",
-              "license-shield": (
-                  f"https://img.shields.io/github/license/{FORK_FULL}.svg"
-                  "?style=for-the-badge"
-              ),
-              "releases-shield": (
-                  f"https://img.shields.io/github/release/{FORK_FULL}.svg"
-                  "?style=for-the-badge"
-              ),
-              "releases": f"https://github.com/{FORK_FULL}/releases",
-              "upstream-shield": (
-                  "https://img.shields.io/github/v/release/"
-                  f"{UPSTREAM_FULL}?label=upstream%20version&style=for-the-badge"
-              ),
-              "upstream-repo": f"https://github.com/{UPSTREAM_FULL}",
-          }
+                  manifest["codeowners"] = [
+                      self.FORK_CODEOWNER,
+                      *cleaned_codeowners,
+                  ]
 
-          upstream_badge = "[![Upstream Release][upstream-shield]][upstream-repo]"
-          release_badge = "[![GitHub Release][releases-shield]][releases]"
+                  manifest_path.write_text(
+                      json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+                      encoding="utf-8",
+                  )
 
-          # Eventuelle Duplikate entfernen und genau einen Upstream-Badge direkt
-          # hinter dem Release-Badge einfügen.
-          text = re.sub(
-              rf"(?m)^\s*{re.escape(upstream_badge)}\s*$\n?",
-              "",
-              text,
-          )
-          if release_badge in text:
-              text = text.replace(
-                  release_badge,
-                  f"{release_badge}\n{upstream_badge}",
-                  1,
-              )
-          else:
-              text = f"{upstream_badge}\n{text}"
+              def patch_readme(self) -> None:
+                  """Patch repository identity and user-facing installation text."""
+                  if not self.README_PATH.is_file():
+                      raise SystemExit("Fehlende Datei: README.md")
 
-          # Nur die von diesem Fork verwalteten Referenzdefinitionen neu aufbauen.
-          ref_pattern = "|".join(re.escape(name) for name in refs)
-          text = re.sub(
-              rf"(?m)^\[(?:{ref_pattern})\]:[^\n]*(?:\n|$)",
-              "",
-              text,
-          )
-          text = text.rstrip() + "\n\n"
-          text += "\n".join(f"[{name}]: {url}" for name, url in refs.items())
-          text += "\n"
+                  text = self.README_PATH.read_text(encoding="utf-8")
+                  text = self._patch_readme_heading(text)
+                  text = self._patch_readme_home_assistant_identity(text)
+                  text = self._patch_readme_repository_identity(text)
+                  text = self._patch_readme_badges_and_references(text)
 
-          readme_path.write_text(text, encoding="utf-8")
+                  self.README_PATH.write_text(text, encoding="utf-8")
+
+              def _patch_readme_heading(self, text: str) -> str:
+                  """Set exactly the first H1 to the current repository name."""
+                  text, count = re.subn(
+                      r"(?m)^#\s+hacs-APsystems(?:EZ1_local(?:_API)*)?\s*$",
+                      f"# {self.fork_repo}",
+                      text,
+                      count=1,
+                  )
+                  if count == 0:
+                      text, count = re.subn(
+                          r"(?m)^#\s+[^\n]+$",
+                          f"# {self.fork_repo}",
+                          text,
+                          count=1,
+                      )
+                  if count == 0:
+                      text = f"# {self.fork_repo}\n\n{text}"
+                  return text
+
+              def _patch_readme_home_assistant_identity(self, text: str) -> str:
+                  """Align the documentation with the Core-overriding integration."""
+                  text = text.replace("apsystemsapi_local", self.TARGET_DOMAIN)
+
+                  # The fork deliberately appears as "APsystems" in Home Assistant.
+                  # Replace the obsolete parallel-integration name regardless of
+                  # line number or occurrence count.
+                  text = text.replace("APsystems Local API", self.TARGET_NAME)
+
+                  # This warning belonged to the former parallel installation and
+                  # is now incorrect because this fork overrides the Core integration.
+                  text = re.sub(
+                      r"\s*\(\s*nicht\s+die\s+APsystems\s+nehmen\s*\)",
+                      "",
+                      text,
+                      flags=re.IGNORECASE,
+                  )
+
+                  # Preserve the upstream project description where appropriate.
+                  text = text.replace(
+                      "APsystems EZ1 local Integration",
+                      "APsystems EZ1 local API Integration",
+                  )
+                  text = text.replace(
+                      "popular EZ1 Microinverter to fix",
+                      "popular EZ1 Microinverter Integration to fix",
+                  )
+                  return text
+
+              def _patch_readme_repository_identity(self, text: str) -> str:
+                  """Point all HACS installation instructions to this fork."""
+                  text = re.sub(
+                      r"owner=[^&\s)]+&repository=hacs-APsystemsEZ1_local(?:_API)?",
+                      (
+                          f"owner={self.fork_owner}"
+                          f"&repository={self.fork_repo}"
+                      ),
+                      text,
+                  )
+
+                  text = re.sub(
+                      r"`(?:[^`/]+/)?hacs-APsystemsEZ1_local(?:_API)?`",
+                      f"`{self.fork_full}`",
+                      text,
+                  )
+                  return text
+
+              def _patch_readme_badges_and_references(self, text: str) -> str:
+                  """Rebuild managed badge links without duplicating entries."""
+                  references = {
+                      "commits-shield": (
+                          "https://img.shields.io/github/commit-activity/y/"
+                          f"{self.fork_full}.svg?style=for-the-badge"
+                      ),
+                      "commits": (
+                          f"https://github.com/{self.fork_full}/commits"
+                      ),
+                      "license-shield": (
+                          "https://img.shields.io/github/license/"
+                          f"{self.fork_full}.svg?style=for-the-badge"
+                      ),
+                      "releases-shield": (
+                          "https://img.shields.io/github/release/"
+                          f"{self.fork_full}.svg?style=for-the-badge"
+                      ),
+                      "releases": (
+                          f"https://github.com/{self.fork_full}/releases"
+                      ),
+                      "upstream-shield": (
+                          "https://img.shields.io/github/v/release/"
+                          f"{self.upstream_full}?label=upstream%20version"
+                          "&style=for-the-badge"
+                      ),
+                      "upstream-repo": (
+                          f"https://github.com/{self.upstream_full}"
+                      ),
+                  }
+
+                  upstream_badge = (
+                      "[![Upstream Release][upstream-shield]][upstream-repo]"
+                  )
+                  release_badge = (
+                      "[![GitHub Release][releases-shield]][releases]"
+                  )
+
+                  text = re.sub(
+                      rf"(?m)^\s*{re.escape(upstream_badge)}\s*$\n?",
+                      "",
+                      text,
+                  )
+                  if release_badge in text:
+                      text = text.replace(
+                          release_badge,
+                          f"{release_badge}\n{upstream_badge}",
+                          1,
+                      )
+                  else:
+                      text = f"{upstream_badge}\n{text}"
+
+                  managed_names = "|".join(
+                      re.escape(name) for name in references
+                  )
+                  text = re.sub(
+                      rf"(?m)^\[(?:{managed_names})\]:[^\n]*(?:\n|$)",
+                      "",
+                      text,
+                  )
+
+                  text = text.rstrip() + "\n\n"
+                  text += "\n".join(
+                      f"[{name}]: {url}"
+                      for name, url in references.items()
+                  )
+                  return text + "\n"
+
+
+          ForkPatcher(os.environ.get("GITHUB_REPOSITORY", "")).run()
           PY
 
       - name: Validate fork patches
