@@ -1,4 +1,4 @@
-# hacs-APsystemsEZ1_local_API
+# hacs-APsystems
 Modification of popular EZ1 Microinverter Integration to fix a few flaws, APsystems seems not to do.
 Keywords: Home Assistant HA - APsystem EZ1 EZ1-M - Microinverter - Microwechselrichter
 
@@ -47,11 +47,11 @@ Platform | Beschreibung
 
 ### Installation mit HACS Repository (Empfohlen)
 
-[![Öffnen Sie Ihr Home Assistant und gehen Sie in das Repository im Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=thowiegit&repository=hacs-APsystemsEZ1_local_API&category=integration)
+[![Öffnen Sie Ihr Home Assistant und gehen Sie in das Repository im Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=thowiegit&repository=hacs-APsystems&category=integration)
 
 1. Installieren Sie [HACS](https://hacs.xyz/) und führen Sie das zugehörige Setup aus.
 2. Gehen Sie in HACS und selektieren "Integrations".
-3. Fügen Sie `thowiegit/hacs-APsystemsEZ1_local_API` mit der Kathegorie "Integration" als [Benutzer Repository](https://hacs.xyz/docs/faq/custom_repositories/) ein. Oder einfacher, benutzen Sie einfach den Link nach "Installation mit HACS Repository (Empfohlen)".
+3. Fügen Sie `thowiegit/hacs-APsystems` mit der Kathegorie "Integration" als [Benutzer Repository](https://hacs.xyz/docs/faq/custom_repositories/) ein. Oder einfacher, benutzen Sie einfach den Link nach "Installation mit HACS Repository (Empfohlen)".
 Falls möglich gleich den "Download" Button nutzen und die aktuelle Version der Integration herunterladen, sonst verschwindet das neue Repository gleich wieder.
 4. Wählen Sie "APsystems" von der Liste oder beim Dialog oben klicken auf "Download".
 5. Anschließend müssen Sie Home Assistant neu starten, damit die Integration verfügbar wird.
@@ -94,10 +94,10 @@ Erzeugen Sie ein Unterverzeichnis in homeassistant/custom_components
 [hacs]: https://github.com/hacs/integration
 [hacsbadge]: https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge
 
-[commits-shield]: https://img.shields.io/github/commit-activity/y/thowiegit/hacs-APsystemsEZ1_local_API.svg?style=for-the-badge
-[commits]: https://github.com/thowiegit/hacs-APsystemsEZ1_local_API/commits
-[license-shield]: https://img.shields.io/github/license/thowiegit/hacs-APsystemsEZ1_local_API.svg?style=for-the-badge
-[releases-shield]: https://img.shields.io/github/release/thowiegit/hacs-APsystemsEZ1_local_API.svg?style=for-the-badge
-[releases]: https://github.com/thowiegit/hacs-APsystemsEZ1_local_API/releases
+[commits-shield]: https://img.shields.io/github/commit-activity/y/thowiegit/hacs-APsystems.svg?style=for-the-badge
+[commits]: https://github.com/thowiegit/hacs-APsystems/commits
+[license-shield]: https://img.shields.io/github/license/thowiegit/hacs-APsystems.svg?style=for-the-badge
+[releases-shield]: https://img.shields.io/github/release/thowiegit/hacs-APsystems.svg?style=for-the-badge
+[releases]: https://github.com/thowiegit/hacs-APsystems/releases
 [upstream-shield]: https://img.shields.io/github/v/release/AndyNew2/hacs-APsystemsEZ1_local?label=upstream%20version&style=for-the-badge
 [upstream-repo]: https://github.com/AndyNew2/hacs-APsystemsEZ1_local
