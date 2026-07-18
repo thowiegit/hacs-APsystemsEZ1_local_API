@@ -71,9 +71,14 @@ jobs:
           import shutil
           from pathlib import Path
 
-          FORK_OWNER = "thowiegit"
-          FORK_REPO = "hacs-APsystemsEZ1_local_API"
-          FORK_FULL = f"{FORK_OWNER}/{FORK_REPO}"
+          import os
+
+          github_repository = os.environ.get("GITHUB_REPOSITORY", "")
+          if "/" not in github_repository:
+              raise SystemExit("GITHUB_REPOSITORY fehlt oder ist ungültig")
+
+          FORK_OWNER, FORK_REPO = github_repository.split("/", 1)
+          FORK_FULL = github_repository
 
           UPSTREAM_OWNER = "AndyNew2"
           UPSTREAM_REPO = "hacs-APsystemsEZ1_local"
@@ -82,13 +87,50 @@ jobs:
           # -----------------------------------------------------------------
           # 1. Integrationsverzeichnis auf die Home-Assistant-Core-Domain legen
           # -----------------------------------------------------------------
-          source_dir = Path("custom_components/apsystemsapi_local")
-          target_dir = Path("custom_components/apsystems")
+          component_root = Path("custom_components")
+          target_dir = component_root / "apsystems"
 
-          if source_dir.is_dir():
+          # Upstream verwendet derzeit für das Verzeichnis "apsystemapi_local",
+          # während die Domain "apsystemsapi_local" lautet. Frühere Fassungen
+          # unseres Workflows gingen fälschlich von einem gleichnamigen Verzeichnis
+          # aus. Beide Schreibweisen werden unterstützt, damit auch eine spätere
+          # Korrektur oder Umbenennung im Upstream den Patch nicht sofort bricht.
+          source_candidates = [
+              component_root / "apsystemapi_local",
+              component_root / "apsystemsapi_local",
+          ]
+          source_dirs = [path for path in source_candidates if path.is_dir()]
+
+          if len(source_dirs) > 1:
+              raise SystemExit(
+                  "Mehrere mögliche Upstream-Komponentenverzeichnisse gefunden: "
+                  + ", ".join(str(path) for path in source_dirs)
+              )
+
+          if source_dirs:
+              source_dir = source_dirs[0]
               if target_dir.exists():
                   shutil.rmtree(target_dir)
               source_dir.rename(target_dir)
+          elif not target_dir.is_dir():
+              raise SystemExit(
+                  "Kein Komponentenverzeichnis gefunden; erwartet wurde eines von: "
+                  + ", ".join(str(path) for path in [*source_candidates, target_dir])
+              )
+
+          # Die Domain steht nicht nur im Manifest, sondern derzeit auch in const.py.
+          # Alle Textdateien der übernommenen Komponente werden daher unabhängig von
+          # ihrer Lage auf die Core-Domain umgeschrieben.
+          for path in target_dir.rglob("*"):
+              if not path.is_file():
+                  continue
+              try:
+                  content = path.read_text(encoding="utf-8")
+              except UnicodeDecodeError:
+                  continue
+              patched = content.replace("apsystemsapi_local", "apsystems")
+              if patched != content:
+                  path.write_text(patched, encoding="utf-8")
 
           # -----------------------------------------------------------------
           # 2. manifest.json strukturiert und idempotent ändern
@@ -126,7 +168,7 @@ jobs:
           # Nur die komplette erste Markdown-Überschrift ersetzen. Dadurch kann sich
           # der Repositoryname bei wiederholten Läufen nicht selbst vervielfachen.
           text, heading_count = re.subn(
-              r"(?m)^#\s+hacs-APsystemsEZ1_local(?:_API)*\s*$",
+              r"(?m)^#\s+hacs-APsystems(?:EZ1_local(?:_API)*)?\s*$",
               f"# {FORK_REPO}",
               text,
               count=1,
@@ -143,6 +185,24 @@ jobs:
               text = f"# {FORK_REPO}\n\n{text}"
 
           text = text.replace("apsystemsapi_local", "apsystems")
+
+          # In Home Assistant erscheint dieser Fork absichtlich unter demselben
+          # Integrationsnamen wie die überdeckte Core-Integration. Die exakte
+          # Bezeichnung kann unabhängig von Lage und Anzahl global ersetzt werden,
+          # ohne Repositorynamen oder die Überschrift „EZ1 local API“ zu treffen.
+          text = text.replace("APsystems Local API", "APsystems")
+
+          # Dieser Hinweis war nur bei der früher parallel installierten Integration
+          # sinnvoll. Der Fork überdeckt jedoch bewusst die Core-Integration und ist
+          # deshalb genau unter "APsystems" auszuwählen. Schreibweise und Abstände
+          # werden tolerant behandelt, damit kleine Upstream-Änderungen erfasst werden.
+          text = re.sub(
+              r"\s*\(\s*nicht\s+die\s+APsystems\s+nehmen\s*\)",
+              "",
+              text,
+              flags=re.IGNORECASE,
+          )
+
           text = text.replace(
               "APsystems EZ1 local Integration",
               "APsystems EZ1 local API Integration",
@@ -173,7 +233,7 @@ jobs:
                   "https://img.shields.io/github/commit-activity/y/"
                   f"{FORK_FULL}.svg?style=for-the-badge"
               ),
-              "commits": f"https://github.com/{FORK_FULL}/commits/main",
+              "commits": f"https://github.com/{FORK_FULL}/commits",
               "license-shield": (
                   f"https://img.shields.io/github/license/{FORK_FULL}.svg"
                   "?style=for-the-badge"
@@ -229,6 +289,7 @@ jobs:
 
           python3 - <<'PY'
           import json
+          import os
           import re
           from pathlib import Path
 
@@ -250,13 +311,46 @@ jobs:
                   'manifest.json: "@thowiegit" muss in codeowners exakt einmal vorkommen'
               )
 
-          expected_heading = "# hacs-APsystemsEZ1_local_API"
+          component_dir = Path("custom_components/apsystems")
+          if not component_dir.is_dir():
+              errors.append("Komponentenverzeichnis custom_components/apsystems fehlt")
+          else:
+              for path in component_dir.rglob("*"):
+                  if not path.is_file():
+                      continue
+                  try:
+                      content = path.read_text(encoding="utf-8")
+                  except UnicodeDecodeError:
+                      continue
+                  if "apsystemsapi_local" in content:
+                      errors.append(
+                          f"Alte Domain apsystemsapi_local verblieb in {path}"
+                      )
+
+          for obsolete_dir in (
+              Path("custom_components/apsystemapi_local"),
+              Path("custom_components/apsystemsapi_local"),
+          ):
+              if obsolete_dir.exists():
+                  errors.append(
+                      f"Altes Komponentenverzeichnis ist noch vorhanden: {obsolete_dir}"
+                  )
+
+          github_repository = os.environ.get("GITHUB_REPOSITORY", "")
+          if "/" not in github_repository:
+              errors.append("GITHUB_REPOSITORY fehlt oder ist ungültig")
+              fork_owner = ""
+              fork_repo = ""
+          else:
+              fork_owner, fork_repo = github_repository.split("/", 1)
+
+          expected_heading = f"# {fork_repo}"
           if not readme.startswith(expected_heading + "\n"):
               errors.append("README.md: falsche erste Überschrift")
 
           required = [
-              "owner=thowiegit&repository=hacs-APsystemsEZ1_local_API",
-              "`thowiegit/hacs-APsystemsEZ1_local_API`",
+              f"owner={fork_owner}&repository={fork_repo}",
+              f"`{fork_owner}/{fork_repo}`",
               "redirect/config_flow_start/?domain=apsystems",
               'Unterverzeichnis mit dem Namen "apsystems"',
               "[upstream-repo]: https://github.com/AndyNew2/hacs-APsystemsEZ1_local",
@@ -272,6 +366,10 @@ jobs:
               ),
               "alte Domain": r"apsystemsapi_local",
               "vervielfachter Titel": r"^# .*_API_API",
+              "falscher Integrationsname": r"APsystems Local API",
+              "veralteten Auswahlhinweis": (
+                  r"\(\s*nicht\s+die\s+APsystems\s+nehmen\s*\)"
+              ),
           }
           for label, pattern in forbidden_patterns.items():
               if re.search(pattern, readme, flags=re.MULTILINE):
@@ -301,7 +399,7 @@ jobs:
             exit 0
           fi
 
-          git commit -m "Auto-Patch: sync upstream and patch fork"
+          git commit -m "Auto-Patch: sync upstream and apply fork identity"
 
           # Der Workflow kann von einem älteren Run erneut gestartet worden sein
           # oder main kann sich während des Jobs geändert haben. Deshalb den
