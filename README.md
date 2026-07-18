@@ -53,10 +53,10 @@ Platform | Beschreibung
 2. Gehen Sie in HACS und selektieren "Integrations".
 3. Fügen Sie `thowiegit/hacs-APsystemsEZ1_local_API` mit der Kathegorie "Integration" als [Benutzer Repository](https://hacs.xyz/docs/faq/custom_repositories/) ein. Oder einfacher, benutzen Sie einfach den Link nach "Installation mit HACS Repository (Empfohlen)".
 Falls möglich gleich den "Download" Button nutzen und die aktuelle Version der Integration herunterladen, sonst verschwindet das neue Repository gleich wieder.
-4. Wählen Sie "APsystems Local API" von der Liste oder beim Dialog oben klicken auf "Download".
+4. Wählen Sie "APsystems" von der Liste oder beim Dialog oben klicken auf "Download".
 5. Anschließend müssen Sie Home Assistant neu starten, damit die Integration verfügbar wird.
 
-### Installation der Integration APsystems Local API
+### Installation der Integration APsystems
 
 [![Hinzufügen der Integration zu Home Assistant!](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=apsystems)
 
@@ -65,7 +65,7 @@ Sie müssen jedoch wie oben beschrieben Home Assistant einmal neu starten.
 
 Nun können wir unseren Wechselrichter hinzufügen mit dem Konfigurations-Dialog:
 
-1. In der HA GUI gehen Sie zu "Einstellungen" -> "Geräte & Dienste". Unten rechts klicken Sie auf "Integration hinzufügen". Dann suchen Sie nach "APsystems Local API" (nicht die APSystems nehmen). Oder benutzen Sie einfach den Link oben.
+1. In der HA GUI gehen Sie zu "Einstellungen" -> "Geräte & Dienste". Unten rechts klicken Sie auf "Integration hinzufügen". Dann suchen Sie nach "APsystems". Oder benutzen Sie einfach den Link oben.
 2. Gehen Sie durch den Konfig-Dialog (weitere Infos siehe unten Konfiguration mit dem Config-Flow), anschließend ist Ihr Wechselrichter in Home Assistant eingerichtet.
 
 ### Manuelle Installation
@@ -74,7 +74,7 @@ Erzeugen Sie ein Unterverzeichnis in homeassistant/custom_components
 1. Ein Unterverzeichnis mit dem Namen "apsystems"
 2. Kopieren Sie alle Files hier in dieses Verzeichnis auch mit dem Unterverzeichnis translations.
 3. Neustart von Home Assistant! Wichtig, nicht vergessen.
-4. In den Geräten, suchen Sie nun "APsystems Local API". Konfiguration nach dem Konfig-Dialog, wie unten beschrieben.
+4. In den Geräten, suchen Sie nun "APsystems". Konfiguration nach dem Konfig-Dialog, wie unten beschrieben.
  
 ### Konfiguration mit dem Config-Flow
 1. Sie müssen die IP Address Ihres Wechselrichters eingeben. Bitte sorgen Sie für eine statische Adresse. Der Wechselrichter selbst kann es leider nicht, deshalb müssen Sie es mit Hilfe Ihres Routers (z.B. FritzBox) so einrichten, dass der WR immer die gleiche IP-Adresse bekommt. Außerdem muss der WR im Local-Mode arbeiten. Andernfalls können die Daten nicht per HA Integrationen erreicht werden. Den Local-Mode stellen Sie mit der Handy APSystems App ein.
@@ -95,7 +95,7 @@ Erzeugen Sie ein Unterverzeichnis in homeassistant/custom_components
 [hacsbadge]: https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge
 
 [commits-shield]: https://img.shields.io/github/commit-activity/y/thowiegit/hacs-APsystemsEZ1_local_API.svg?style=for-the-badge
-[commits]: https://github.com/thowiegit/hacs-APsystemsEZ1_local_API/commits/main
+[commits]: https://github.com/thowiegit/hacs-APsystemsEZ1_local_API/commits
 [license-shield]: https://img.shields.io/github/license/thowiegit/hacs-APsystemsEZ1_local_API.svg?style=for-the-badge
 [releases-shield]: https://img.shields.io/github/release/thowiegit/hacs-APsystemsEZ1_local_API.svg?style=for-the-badge
 [releases]: https://github.com/thowiegit/hacs-APsystemsEZ1_local_API/releases
