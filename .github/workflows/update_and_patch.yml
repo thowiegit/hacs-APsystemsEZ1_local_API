@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: sync-and-patch-main
+  cancel-in-progress: false
+
 jobs:
   sync_and_patch:
     runs-on: ubuntu-latest
@@ -16,6 +20,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -297,4 +302,10 @@ jobs:
           fi
 
           git commit -m "Auto-Patch: sync upstream and patch fork"
+
+          # Der Workflow kann von einem älteren Run erneut gestartet worden sein
+          # oder main kann sich während des Jobs geändert haben. Deshalb den
+          # aktuellen Remote-Stand unmittelbar vor dem Push integrieren.
+          git fetch origin main
+          git rebase origin/main
           git push origin HEAD:main
